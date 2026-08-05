@@ -1,0 +1,1991 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LDI — Carrinho — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e17;--card:#121826;--border:rgba(255,255,255,.07);--border-h:rgba(255,255,255,.12);
+  --text:#e8edf6;--text-strong:#f1f5fb;--muted:#8a96ab;--hint:#6b7689;
+  --accent:#3b82f6;--accent-bg:rgba(59,130,246,.16);
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;
+  --surf:rgba(255,255,255,.03);
+}
+html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+
+/* ─── App Header ─────────────────────────────────────────────────── */
+.app-hdr{position:sticky;top:0;z-index:20;background:rgba(12,17,28,.92);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);padding:0 26px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px}
+
+/* Funil badge */
+.funil-wrap{position:relative}
+.funil-btn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surf);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px}
+.funil-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.funil-name{font-size:12px;font-weight:600;color:var(--text-strong)}
+.funil-status{font-size:9px;color:var(--green);letter-spacing:.04em}
+
+/* Nav tabs */
+.hdr-tabs{display:flex;align-items:center;gap:4px}
+.htab{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;white-space:nowrap}
+.htab:hover{color:var(--text)}
+.htab.htab-active{background:rgba(59,130,246,.16);color:#fff}
+.htab-icon{font-size:13px}
+
+/* Period controls */
+.hdr-right{display:flex;align-items:center;gap:8px}
+.presets{display:flex;gap:4px}
+.btn-pre{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 11px;border-radius:8px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:500;transition:all .12s;white-space:nowrap}
+.btn-pre:hover{border-color:var(--border-h);color:var(--text)}
+.btn-pre.on{background:rgba(59,130,246,.16);border-color:rgba(96,165,250,.35);color:#cfe0ff;font-weight:600}
+.drbox{display:flex;align-items:center;background:var(--surf);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .15s;padding:0 6px;gap:3px}
+.drbox:focus-within{border-color:rgba(96,165,250,.5)}
+.drbox-icon{color:var(--hint);font-size:12px;user-select:none}
+.drbox input[type=date]{background:transparent;border:none;outline:none;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;padding:5px 4px;cursor:pointer;color-scheme:dark;width:100px}
+.drbox-sep{color:var(--hint);font-size:11px;user-select:none}
+.btn-update{background:rgba(59,130,246,.16);border:1px solid rgba(96,165,250,.3);color:#60a5fa;padding:5px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;white-space:nowrap;box-shadow:0 0 16px rgba(59,130,246,.2)}
+.btn-update:hover:not(:disabled){box-shadow:0 0 16px rgba(59,130,246,.4)}
+.btn-update:disabled{opacity:.4;cursor:not-allowed}
+
+/* ─── Content ────────────────────────────────────────────────────── */
+.app-content{max-width:1640px;margin:0 auto;padding:22px 30px 40px}
+.page{display:none}.page.active{display:block}
+
+/* Page header */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.hdr-title{font-size:22px;font-weight:700;font-family:'Sora',sans-serif;color:var(--text-strong);line-height:1.25}
+.hdr-sub{margin-top:5px;font-size:11px;color:var(--hint);font-family:'JetBrains Mono',monospace}
+.err{background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.25);border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:13px;color:var(--red);line-height:1.5}
+
+/* KPIs */
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:13px}
+.kc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;transition:border-color .2s}
+.kc:hover{border-color:var(--border-h)}
+.kc-lbl{font-size:9px;color:var(--hint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700}
+.kc-val{font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:-.02em;font-size:22px;line-height:1.1;color:var(--text-strong)}
+.kc-val-sm{font-size:18px}
+.kc-sub{font-size:10px;color:var(--hint);margin-top:5px;font-family:'JetBrains Mono',monospace}
+
+/* Section label */
+.section-lbl{font-size:9px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px;margin-top:20px}
+
+/* Status legend */
+.status-legend{display:flex;gap:16px;margin-bottom:14px}
+.sl{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--hint)}
+.sl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* Charts */
+.cc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px 14px}
+.ch{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.ct{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.lg{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.li{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.ll{width:14px;height:2px;border-radius:2px}
+.ld{width:7px;height:7px;border-radius:50%}
+
+/* Tooltip */
+.tip{background:#1a2236;border:1px solid var(--border-h);border-radius:8px;padding:10px 13px;font-size:12px;box-shadow:0 4px 16px rgba(2,6,20,.45);display:none;position:absolute;pointer-events:none;z-index:20;min-width:150px}
+.tl{color:var(--hint);margin-bottom:5px;font-weight:500;font-size:10px;font-family:'JetBrains Mono',monospace}
+.tr{display:flex;justify-content:space-between;gap:14px;margin-bottom:2px;font-size:11px}
+.tv{color:var(--text-strong);font-weight:600;font-family:'JetBrains Mono',monospace}
+
+/* Table */
+table{width:100%;border-collapse:collapse}
+th{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer}
+th:hover{color:var(--text)}
+td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--text)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* Spinner */
+.sw{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px}
+.sp{width:32px;height:32px;border:2px solid var(--border);border-top:2px solid var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.st{color:var(--hint);font-size:13px}
+.foot{margin-top:18px;font-size:10px;color:var(--hint);text-align:center;font-family:'JetBrains Mono',monospace;opacity:.5}
+canvas{display:block}
+input[type=date]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer;filter:invert(1)}
+
+/* ─── Mobile Responsive ────────────────────────────────────────── */
+@media(max-width:768px){
+  .app-hdr{height:auto;flex-wrap:wrap;padding:0;gap:0;align-items:stretch}
+  .funil-wrap{padding:9px 14px;flex-shrink:0;border-bottom:1px solid var(--border);width:auto}
+  .hdr-right{order:2;flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 14px 8px 8px;flex-wrap:nowrap;border-bottom:1px solid var(--border)}
+  .hdr-right::-webkit-scrollbar{display:none}
+  .presets{flex-wrap:nowrap;gap:3px}
+  .btn-pre{font-size:10px;padding:4px 8px;flex-shrink:0}
+  .drbox{flex-shrink:0}
+  .drbox input[type=date]{width:86px;font-size:10px}
+  .btn-update{font-size:11px;padding:5px 10px;flex-shrink:0}
+  .hdr-tabs{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;gap:2px;padding:6px 14px 8px}
+  .hdr-tabs::-webkit-scrollbar{display:none}
+  .htab{flex-shrink:0;font-size:11px;padding:5px 10px}
+  .htab-icon{font-size:12px}
+  .app-content{padding:14px 10px 30px;max-width:100%}
+  .hdr{flex-direction:column;gap:6px;margin-bottom:14px}
+  .hdr-title{font-size:18px}
+  .g3,.g4,.g5{grid-template-columns:repeat(2,1fr)!important;gap:8px!important}
+  .kc{padding:12px 13px}
+  .kc-val{font-size:18px}
+  .kc-val-sm{font-size:15px}
+  [style*="1fr 1fr"]{grid-template-columns:1fr!important}
+  [style*="1fr 420px"]{grid-template-columns:1fr!important}
+  .page div[style*="overflow:hidden"]{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+  .page table{font-size:10px!important}
+  .page td,.page th{padding:7px 8px!important;white-space:nowrap}
+  .page td:first-child,.page th:first-child{white-space:normal;min-width:90px;max-width:140px}
+  .status-legend{flex-wrap:wrap;gap:8px}
+}
+</style>
+</head>
+<body>
+<header class="app-hdr">
+  <div class="funil-wrap">
+    <div class="funil-btn">
+      <span class="funil-dot"></span>
+      <div>
+        <div class="funil-name">ldi_jul26 | Carrinho</div>
+        <div class="funil-status">ativo</div>
+      </div>
+    </div>
+  </div>
+  <nav class="hdr-tabs" id="hdr-tabs">
+    <button class="htab htab-active" onclick="navTo('principal')">⊞ Principal</button>
+    <button class="htab" onclick="navTo('fichas')">📝 Fichas</button>
+    <button class="htab" onclick="navTo('vendas')">💰 Vendas</button>
+    <button class="htab" onclick="navTo('anuncios')">◈ Campanhas / Anúncios</button>
+    <button class="htab" onclick="navTo('resumo')">📋 Resumo diário</button>
+  </nav>
+  <div class="hdr-right">
+    <div class="presets" id="hdr-presets">
+      <button class="btn-pre" onclick="applyQuickCurrent('hoje')">Hoje</button>
+      <button class="btn-pre" onclick="applyQuickCurrent('ontem')">Ontem</button>
+      <button class="btn-pre" onclick="applyQuickCurrent('7d')">7 dias</button>
+      <button class="btn-pre on" onclick="applyQuickCurrent('30d')">30 dias</button>
+      <button class="btn-pre" onclick="applyQuickCurrent('mes')">Este mês</button>
+    </div>
+    <div class="drbox">
+      <span class="drbox-icon">📅</span>
+      <input type="date" id="hdr-start" onchange="onDCCurrent('s',this.value)"/>
+      <span class="drbox-sep">→</span>
+      <input type="date" id="hdr-end" onchange="onDCCurrent('e',this.value)"/>
+    </div>
+    <button class="btn-update" id="btn-update" onclick="loadData()">↻ Atualizar</button>
+  </div>
+</header>
+
+<div class="app-content">
+  <div class="sw" id="loading"><div class="sp"></div><p class="st">Carregando dados...</p></div>
+  <div id="page-principal" class="page active"></div>
+  <div id="page-fichas"    class="page"></div>
+  <div id="page-vendas"    class="page"></div>
+  <div id="page-anuncios"  class="page"></div>
+  <div id="page-resumo"    class="page"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   LDI jul26 — Carrinho — Dashboard local
+   Conectado ao Google Sheets (planilha do funil "carrinho ldi_jul26"), abas:
+     • Base Meta        → investimento/cliques/impressões/vídeo por dia (gerenciador de anúncios)
+     • Fichas tráfego    → fichas de tráfego pago
+     • Fichas orgânico   → fichas do orgânico
+     • Fichas lançamento → fichas do lançamento (disparos) — somada junto com Orgânico
+     • Base Vendas       → vendas fechadas (nome/telefone/e-mail/valor)
+
+   Os dados são buscados via endpoint público de exportação CSV do Google
+   Sheets (gviz), sem necessidade de chave de API — a planilha só precisa
+   estar compartilhada como "Qualquer pessoa com o link → Leitor". O botão
+   "↻ Atualizar" refaz a busca das abas. A busca é feita pelo NOME da aba
+   (não pelo gid) — precisa bater exatamente com o nome da aba na planilha.
+   ════════════════════════════════════════════════════════════════════════ */
+
+// ── Meta de custo por ficha ────────────────────────────────────────────────
+const META_CPL = 15; // R$ 15 por ficha (tráfego)
+
+// Metas de mídia usadas no farol do Resumo diário (🟢 dentro / 🟡 até 10% fora / 🔴 mais de 10% fora)
+// CPC / CTR / CPM / Tx. formulário ainda sem meta definida para o ldi_jul26 — ficam sem farol.
+const METAS_RESUMO = {
+  cpc:    null,
+  ctr:    null,
+  cpm:    null,
+  txForm: null,
+};
+
+// ── Constantes fixas usadas nas métricas da aba Vendas ─────────────────────
+const LISTA_LEADS_TOTAL       = 6425;     // tamanho da lista de leads deste lançamento
+const INVESTIMENTO_ROAS_EXTRA = 36710.66; // custo fixo somado ao investimento em mídia p/ ROAS
+// Faturamento agora usa o valor real de cada venda (coluna "Valor"), não um ticket médio fixo.
+
+// Chart colors
+const CHART_INV  = "#3b82f6";
+const CHART_CPL  = "#fbbf24";
+const CHART_TRAF = "#34d399";
+const CHART_ORG  = "#a78bfa";
+
+// ── State ─────────────────────────────────────────────────────────────────
+const S = {
+  meta:{},              // date → {spend,clicks,impressions,videoViews,video75} (totais gerais)
+  metaRows:[],           // linhas planas da Base Meta: {date,adId,adName,campId,campName,spend,clicks,impressions,videoViews,video75,igUrl}
+  adIdMap:{},            // adId → {adName,campName,campId,igUrl} (fonte da verdade p/ casar fichas)
+  fichaAttrib:[],        // fichas de tráfego casadas com anúncio/campanha: {date,adName,campName}
+  vendaAttrib:[],        // vendas de tráfego casadas com anúncio/campanha: {date,adName,campName,valor}
+  fichaOrigem:[],        // todas as fichas (tráfego+orgânico) com origem/canal: {date,ms,tipo,origem,canal,phone,email,comPreco}
+  fichaOrigemUnica:[],   // fichas deduplicadas por telefone/e-mail (só a mais antiga por pessoa)
+  vendaOrigem:[],        // vendas casadas (tráfego+orgânico) com origem/canal: {date,tipo,origem,canal,valor}
+  trafego:{},            // date → count (fichas tráfego, totais: com+sem preço)
+  trafegoComPreco:{},    // date → count (fichas tráfego que responderam alguma das perguntas de valor)
+  organico:{},           // date → count (fichas orgânico, totais: com+sem preço)
+  organicoComPreco:{},   // date → count (fichas orgânico que responderam alguma das perguntas de valor)
+  vendasTraf:{},         // date → count (vendas casadas com fichas de tráfego)
+  vendasOrg:{},          // date → count (vendas casadas com fichas de orgânico)
+  vendasTotal:0, vendasUnmatched:0, vendasFaturamento:0,
+  startDate:"", endDate:"", activeQuick:"30d",
+  currentPage:"principal",
+  updated:null,
+  loading:true,
+  error:null,
+  manualSpendHoje:null, // override manual do investimento de "hoje" (Resumo diário)
+  // cross-filtering (aba Campanhas/Anúncios)
+  selectedCamps:new Set(),
+  selectedAds:new Set(),
+  campSearch:"", adSearch:"",
+  cSort:{col:"spend",dir:"desc"},
+  aSort:{col:"spend",dir:"desc"},
+  // aba Fichas
+  fichasQual:"todas",     // 'todas' | 'traf' | 'org' — qualificação das fichas por fonte
+  fichasMode:"totais",    // 'totais' | 'unicas' — fichas únicas deduplicadas por telefone/e-mail
+  fichasPreco:"total",    // 'total' | 'comPreco' | 'semPreco' — respondeu a pergunta de valor?
+  selectedOrigens:new Set(),
+  selectedCanais:new Set(),
+  origemSearch:"", canalSearch:"",
+  oSort:{col:"fichas",dir:"desc"},
+  mSort:{col:"fichas",dir:"desc"},
+};
+
+// ── Date helpers (GMT-3 Brasil) ───────────────────────────────────────────
+function nowBR(){ return new Date(Date.now()-(3*60*60*1000)); }
+function toISODate(d){ return d.toISOString().split("T")[0]; }
+function todayISO(){ return toISODate(nowBR()); }
+function yesterdayISO(){ const d=nowBR();d.setDate(d.getDate()-1);return toISODate(d); }
+function nDaysAgoISO(n){ const d=nowBR();d.setDate(d.getDate()-n);return toISODate(d); }
+function firstOfMonthISO(){ const d=nowBR();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`; }
+
+// ── Format helpers ────────────────────────────────────────────────────────
+function parseBRL(s){
+  if(!s||s==="-"||s==="0")return 0;
+  s=String(s).replace(/[R$\s]/g,"").trim();
+  if(!s||s==="-")return 0;
+  if(s.includes(",")&&s.includes("."))return parseFloat(s.replace(/\./g,"").replace(",","."))||0;
+  if(s.includes(","))return parseFloat(s.replace(",","."))||0;
+  return parseFloat(s)||0;
+}
+function fBRL(n){ return "R$ "+(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fBRLShort(n){ const a=Math.abs(n||0),sg=n<0?"-":"";if(a>=1000)return sg+"R$ "+(a/1000).toFixed(1).replace(".",",")+"k";return sg+"R$ "+Math.round(a); }
+function fPct(n){ return (n||0).toFixed(2).replace(".",",")+"%"; }
+// Normalização p/ casar venda ↔ ficha por e-mail ou telefone (ignora formatação/país/pontuação)
+function normalizePhone(s){ return String(s||"").replace(/\D/g,""); }
+function normalizeEmail(s){ return String(s||"").trim().toLowerCase(); }
+function fDate(iso){ if(!iso)return"";const[,m,d]=iso.split("-");return `${d}/${m}`; }
+function fDateBR(iso){ if(!iso)return"—";const[y,m,d]=iso.split("-");return `${d}/${m}/${y}`; }
+function toISO(s){
+  if(!s||s==="Date"||s==="")return null;
+  s=String(s).trim().split(" ")[0];
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const p=s.split("/");
+  if(p.length===3){
+    const y=p[2].length===4?p[2]:"20"+p[2];
+    const a=parseInt(p[0]),b=parseInt(p[1]);
+    if(b>12){ return `${y}-${p[0].padStart(2,"0")}-${p[1].padStart(2,"0")}`; }
+    return `${y}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`;
+  }
+  return null;
+}
+// Parser genérico de "DD/MM/YYYY HH:MM:SS" (ou "YYYY-MM-DD ...") → epoch ms (sem fuso).
+// Usado tanto pra "Submitted At" das fichas (que precisa do ajuste -3h) quanto pra
+// "Data Correta" das vendas (que já vem certa, sem ajuste).
+function parseDateTimeMs(s){
+  if(!s)return null;
+  const [datePart,timePart]=String(s).trim().split(" ");
+  if(!datePart)return null;
+  let y,mo,da;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(datePart)){
+    [y,mo,da]=datePart.split("-").map(Number);
+  }else{
+    const p=datePart.split("/");
+    if(p.length!==3)return null;
+    y=parseInt(p[2].length===4?p[2]:"20"+p[2]);
+    const a=parseInt(p[0]),b=parseInt(p[1]);
+    if(b>12){mo=a;da=b;}else{da=a;mo=b;} // DD/MM por padrão (BR), MM/DD se 2ª parte>12
+  }
+  if(!y||!mo||!da)return null;
+  let hh=0,mi=0,ss=0;
+  if(timePart){
+    const t=timePart.split(":").map(n=>parseInt(n)||0);
+    hh=t[0]||0;mi=t[1]||0;ss=t[2]||0;
+  }
+  return Date.UTC(y,mo-1,da,hh,mi,ss);
+}
+function msToISO(ms){
+  const d=new Date(ms);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+}
+// "Submitted At" das fichas vem com 3h a mais do horário real (ex: 18h na
+// planilha = 15h de verdade). Esta função já desconta as 3h antes de definir
+// o dia — por isso um registro "17/07 02:00" cai no dia 16/07 (23:00).
+function toISOFicha(s){
+  const ms=parseDateTimeMs(s);if(ms==null)return null;
+  return msToISO(ms-3*60*60*1000);
+}
+// "Data Correta" das vendas já vem no horário certo — sem ajuste de fuso.
+function toISOVenda(s){
+  const ms=parseDateTimeMs(s);if(ms==null)return null;
+  return msToISO(ms);
+}
+
+// ── Status helpers ────────────────────────────────────────────────────────
+function statusColor(val,meta,higherIsBetter){
+  if(!val||val===0)return "#8a96ab";
+  const ratio=val/meta;
+  if(higherIsBetter){ if(ratio>=1)return "#34d399";if(ratio>=0.9)return "#fbbf24";return "#f87171"; }
+  else { if(ratio<=1)return "#34d399";if(ratio<=1.1)return "#fbbf24";return "#f87171"; }
+}
+function statusBorder(val,meta,higherIsBetter){
+  const c=statusColor(val,meta,higherIsBetter);
+  if(c==="#34d399") return "rgba(52,211,153,.22)";
+  if(c==="#fbbf24") return "rgba(251,191,36,.22)";
+  if(c==="#f87171") return "rgba(248,113,113,.22)";
+  return "var(--border)";
+}
+// ── CSV parser ────────────────────────────────────────────────────────────
+// Parser CSV "de verdade" (RFC4180): processa o texto inteiro caractere a caractere,
+// sem quebrar em linhas antes de saber se está dentro de aspas. Respostas de texto
+// livre do formulário frequentemente têm quebra de linha DENTRO de um campo entre
+// aspas — isso é CSV válido, o Google Sheets exporta assim. O parser antigo cortava
+// o texto por \n primeiro (text.split(/\r?\n/)) e só depois olhava as aspas, então
+// um campo multi-linha virava várias "linhas" quebradas, cada uma com as colunas
+// deslocadas — foi isso que fez pedaços de resposta de texto livre aparecerem como
+// se fossem "origem" (utm_source) na aba Fichas.
+function parseCSVText(text){
+  const result=[];
+  let row=[],cur="",inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){
+        if(text[i+1]==='"'){cur+='"';i++;}
+        else inQ=false;
+      }else{
+        cur+=c;
+      }
+    }else{
+      if(c==='"'){inQ=true;}
+      else if(c===','){row.push(cur);cur="";}
+      else if(c==='\r'){/* ignora — o \n logo em seguida fecha a linha */}
+      else if(c==='\n'){row.push(cur);cur="";result.push(row);row=[];}
+      else{cur+=c;}
+    }
+  }
+  if(cur!==""||row.length>0){row.push(cur);result.push(row);}
+  return {values:result.filter(r=>!(r.length===1&&r[0]===""))};
+}
+function parseSheet(json){
+  const rows=json.values||[];if(rows.length<2)return[];
+  const h=rows[0];
+  return rows.slice(1).map(r=>Object.fromEntries(h.map((k,i)=>[k,(r[i]||"").trim()])));
+}
+// ── Google Sheets (conectado) ───────────────────────────────────────────────
+// Planilha: https://docs.google.com/spreadsheets/d/1Lt7JS4hGgC_Uf-3lQvY3ct2BwPooMFgwxuBXRCGGEEs/edit
+// A planilha precisa estar compartilhada como "Qualquer pessoa com o link → Leitor"
+// para o endpoint público de exportação CSV (gviz) funcionar sem autenticação.
+// Busca pelo NOME da aba (em vez de gid) — precisa bater exatamente com o
+// nome da aba na planilha (acentos incluídos).
+const SHEET_ID          = "1Lt7JS4hGgC_Uf-3lQvY3ct2BwPooMFgwxuBXRCGGEEs";
+const SHEET_META        = "Base Meta";
+const SHEET_TRAFEGO     = "Fichas tráfego";
+const SHEET_ORGANICO    = "Fichas orgânico";
+const SHEET_LANCAMENTO  = "Fichas lançamento"; // somada junto com SHEET_ORGANICO
+const SHEET_VENDAS      = "Base Vendas";
+
+async function fetchSheet(label,sheetName){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),20000); // 20s timeout
+  let res;
+  try{
+    res=await fetch(url,{cache:"no-cache",signal:ctrl.signal});
+  }catch(fetchErr){
+    clearTimeout(timer);
+    if(fetchErr.name==="AbortError") throw new Error(`Timeout ao buscar "${label}" — planilha demorou mais de 20s`);
+    throw new Error(`Falha de rede ao buscar "${label}": ${fetchErr.message}`);
+  }
+  clearTimeout(timer);
+  if(!res.ok) throw new Error(`Erro ${res.status} ao buscar "${label}" — verifique se a planilha está compartilhada como "qualquer pessoa com o link pode ver"`);
+  const text=await res.text();
+  if(!text||text.trim().length<3) throw new Error(`Resposta vazia para "${label}"`);
+  console.log(`[sheets] "${label}" OK — ${text.length} chars`);
+  return parseCSVText(text);
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────
+async function loadData(){
+  S.loading=true; S.error=null; render();
+  try{
+    const [metaJ, trafJ, orgJ, lancJ, vendasJ] = await Promise.all([
+      fetchSheet("Base Meta",SHEET_META),
+      fetchSheet("Fichas tráfego",SHEET_TRAFEGO),
+      fetchSheet("Fichas orgânico",SHEET_ORGANICO),
+      fetchSheet("Fichas lançamento",SHEET_LANCAMENTO),
+      fetchSheet("Base Vendas",SHEET_VENDAS),
+    ]);
+    const metaRowsRaw = parseSheet(metaJ);
+    const vendasRows  = parseSheet(vendasJ);
+
+    // ── Dedup por Token + descarte de fichas incompletas ────────────────────
+    // Desde que a pergunta de preço saiu do formulário (27/07 ~19h), o mesmo
+    // envio passou a gerar 2 linhas com o mesmo Token: uma com "Submitted At"
+    // certo e outra com data quebrada "01/01/0001 00:00:00". Regra: se o Token
+    // tem as duas, fica só a de data certa; se só existe a de data quebrada
+    // (sem par), fica ela mesma.
+    const DATA_QUEBRADA="01/01/0001 00:00:00";
+    function dedupByToken(rows){
+      const groups={}, semToken=[];
+      for(const r of rows){
+        const tok=(r["Token"]||"").trim();
+        if(!tok){semToken.push(r);continue;}
+        (groups[tok]=groups[tok]||[]).push(r);
+      }
+      const out=semToken.slice();
+      for(const tok in groups){
+        const g=groups[tok];
+        const validas=g.filter(r=>(r["Submitted At"]||"").trim()!==DATA_QUEBRADA);
+        if(validas.length)out.push(...validas);
+        else out.push(g[0]);
+      }
+      return out;
+    }
+    function limpaFichas(rows){ return dedupByToken(rows); }
+    const trafRows = limpaFichas(parseSheet(trafJ));
+    const orgJRows = limpaFichas(parseSheet(orgJ));
+    const lancRows = limpaFichas(parseSheet(lancJ));
+
+    // ── Fichas "com preço" × "sem preço" (Tráfego, Orgânico e Lançamento) ──────
+    // As três abas têm uma única pergunta de valor/pagamento. "Com preço" = quem
+    // respondeu essa pergunta (sinal de formulário completo); "sem preço" = quem
+    // não respondeu (envio incompleto/abandonado).
+    const trafHeaders=trafRows.length?Object.keys(trafRows[0]):[];
+    const KEY_PRECO=trafHeaders.find(h=>h.startsWith("O valor da Aliança Divergente com 50% de desconto"));
+    function temPreco(r){
+      if(!KEY_PRECO)return true; // coluna não encontrada — não filtra nada
+      return !!(r[KEY_PRECO]||"").trim();
+    }
+    // Data de cada ficha = a própria "Submitted At" da linha, sempre que ela for
+    // válida (diferente de "01/01/0001 00:00:00"). Só herda a data da linha
+    // anterior (backfill) quando a própria linha não tem "Submitted At" válido
+    // (as poucas "órfãs" que sobraram do dedup por Token, sem par de data certa).
+    function resolveComBackfill(rows){
+      let lastGoodMs=null;
+      return rows.map(r=>{
+        const comPreco=temPreco(r);
+        const subAt=(r["Submitted At"]||"").trim();
+        const rawMs=(subAt&&subAt!==DATA_QUEBRADA)?parseDateTimeMs(subAt):null;
+        let ms;
+        if(rawMs!=null){
+          ms=rawMs;
+          lastGoodMs=rawMs;
+        }else{
+          ms=lastGoodMs; // sem data própria válida — herda a última data boa
+        }
+        return{r,comPreco,ms};
+      });
+    }
+    const trafResolved=resolveComBackfill(trafRows);
+    const orgJResolved=resolveComBackfill(orgJRows);
+    const lancResolved=resolveComBackfill(lancRows);
+    // Lançamento + Orgânico somados numa única categoria "orgânico"
+    const orgResolved=[...orgJResolved,...lancResolved];
+    // ── Fichas: Tráfego (data já ajustada -3h) ──
+    // trafDConv/orgDConv (usadas na Tx conversão formulário) contam toda ficha
+    // válida (com ou sem preço) — cada linha aqui já é um envio completo do form.
+    const trafD={}, trafDComPreco={}, trafDConv={};
+    for(const{comPreco,ms} of trafResolved){
+      if(ms==null)continue;
+      const d=msToISO(ms-3*60*60*1000);
+      trafD[d]=(trafD[d]||0)+1;
+      if(comPreco)trafDComPreco[d]=(trafDComPreco[d]||0)+1;
+      trafDConv[d]=(trafDConv[d]||0)+1;
+    }
+    // ── Fichas: Orgânico (data já ajustada -3h) ──
+    const orgD={}, orgDComPreco={}, orgDConv={};
+    for(const{comPreco,ms} of orgResolved){
+      if(ms==null)continue;
+      const d=msToISO(ms-3*60*60*1000);
+      orgD[d]=(orgD[d]||0)+1;
+      if(comPreco)orgDComPreco[d]=(orgDComPreco[d]||0)+1;
+      orgDConv[d]=(orgDConv[d]||0)+1;
+    }
+
+    // ── Base Meta (investimento) ── guarda linhas planas + mapa Ad ID → anúncio/campanha
+    const mD={}, metaRows=[], adIdMap={};
+    for(const r of metaRowsRaw){
+      const d=toISO(r["Date"]);if(!d)continue;
+      const sp=parseBRL(r["Spend (Cost, Amount Spent)"]);
+      const cl=parseInt(r["Action Link Clicks"]||0)||0;
+      const im=parseInt(r["Impressions"]||0)||0;
+      const vv=parseInt(r["Action Video View"]||0)||0;
+      const v75=parseInt(r["Video 75 Percent Watched Actions"]||0)||0;
+      const lv=parseInt(r["Action Landing Page View"]||0)||0;
+      const adId=(r["Ad ID"]||"").trim();
+      const adName=(r["Ad Name"]||"").trim();
+      const campId=(r["Campaign ID"]||"").trim();
+      const campName=(r["Campaign Name"]||"").trim();
+      const igUrl=(r["Instagram Permalink URL"]||"").trim();
+
+      if(!mD[d])mD[d]={spend:0,clicks:0,impressions:0,videoViews:0,video75:0,landingViews:0};
+      mD[d].spend+=sp;mD[d].clicks+=cl;mD[d].impressions+=im;mD[d].videoViews+=vv;mD[d].video75+=v75;mD[d].landingViews+=lv;
+
+      metaRows.push({date:d,adId,adName,campId,campName,spend:sp,clicks:cl,impressions:im,videoViews:vv,video75:v75,landingViews:lv,igUrl});
+
+      if(adId&&!adIdMap[adId])adIdMap[adId]={adName,campName,campId,igUrl};
+      if(adId&&igUrl&&!adIdMap[adId].igUrl)adIdMap[adId].igUrl=igUrl;
+    }
+
+    // ── Casar fichas de tráfego → anúncio/campanha ──
+    // Padrão de UTM usado no ldi_jul26: utm_medium = "{nome campanha}_id_{campaign_id}"
+    //                                    utm_content = "{nome anúncio}_id_{ad_id}"
+    // (o "_id_" separado por underscore — diferente do padrão "id" colado usado no OFRR —
+    // por isso o regex aceita o underscore opcional dos dois lados)
+    // Prioridade: resolver pelo Ad ID batido na Base Meta (fonte da verdade — cobre o
+    // caso do mesmo anúncio existir em campanhas diferentes com Ad IDs diferentes).
+    // Se o Ad ID ainda não apareceu na Base Meta, cai no nome cru extraído da UTM.
+    // earliestByPhone/Email guardam, por contato, a ficha mais antiga (tráfego ou
+    // orgânico) — usados tanto para casar vendas quanto (no caso do tráfego) pra
+    // saber de qual anúncio/campanha essa ficha veio.
+    const fichaAttrib=[];
+    const fichaOrigem=[]; // TODAS as fichas (tráfego+orgânico) com origem/canal: {date,ms,tipo,origem,canal,phone,email,comPreco}
+    const earliestByPhone={}, earliestByEmail={};
+    function noteFicha(type,phone,email,ms,adName,campName,origem,canal,comPreco){
+      if(ms==null)return;
+      const iso=msToISO(ms-3*60*60*1000); // mesmo ajuste de fuso usado nas fichas (toISOFicha)
+      const rec={type,ms,iso,adName:adName||null,campName:campName||null,origem:origem||null,canal:canal||null,comPreco:!!comPreco};
+      if(phone&&(!earliestByPhone[phone]||ms<earliestByPhone[phone].ms))earliestByPhone[phone]=rec;
+      if(email&&(!earliestByEmail[email]||ms<earliestByEmail[email].ms))earliestByEmail[email]=rec;
+    }
+    for(const{r,ms,comPreco} of trafResolved){
+      const d=ms!=null?msToISO(ms-3*60*60*1000):null;
+      // Alguns cliques chegam com o macro do Meta não substituído, ex:
+      // "{{campaign.name}}_id_{{campaign.id}}" / "{{ad.name}}_id_{{ad.id}}" —
+      // isso não é um nome de campanha/anúncio real, então tratamos como se
+      // não tivesse UTM nenhuma (cai em "sem anúncio"/"sem campanha"/"não informado").
+      const utmSrc=(r["utm_source"]||"").trim();
+      const utmMedRaw=(r["utm_medium"]||"").trim();
+      const utmContRaw=(r["utm_content"]||r["utm_term"]||"").trim();
+      const utmMed=utmMedRaw.includes("{{")?"":utmMedRaw;
+      const utmCont=utmContRaw.includes("{{")?"":utmContRaw;
+      const adIdMatch=utmCont.match(/_?id_?(\d{10,})$/);
+      const rawAdId=adIdMatch?adIdMatch[1]:null;
+      const adNameMatch=utmCont.match(/^(.+?)_?id_?\d{10,}$/);
+      const rawAdName=adNameMatch?adNameMatch[1]:(utmCont||null);
+      const campMatch=utmMed.match(/^(.+?)_?id_?\d+$/);
+      const rawCampName=campMatch?campMatch[1]:(utmMed||null);
+
+      let adName=rawAdName, campName=rawCampName;
+      if(rawAdId&&adIdMap[rawAdId]){
+        adName=adIdMap[rawAdId].adName||rawAdName;
+        campName=adIdMap[rawAdId].campName||rawCampName;
+      }
+      const trafPhone=normalizePhone(r["Qual seu WhatsApp?"]), trafEmail=normalizeEmail(r["Qual seu e-mail?"]);
+      noteFicha("traf",trafPhone,trafEmail,ms,adName,campName,utmSrc,utmMed,comPreco);
+      // Campanhas/Anúncios: guarda TODA ficha atribuída a anúncio/campanha, com a
+      // flag comPreco — "Fichas com preço"/"Custo/ficha com preço" filtram por ela,
+      // "Fichas totais"/"Custo/ficha total" contam todas (com+sem preço).
+      if(d&&(adName||campName)){
+        fichaAttrib.push({date:d,adName:adName||"(sem anúncio)",campName:campName||"(sem campanha)",comPreco:!!comPreco});
+      }
+      if(d)fichaOrigem.push({date:d,ms,tipo:"traf",origem:utmSrc||"(não informado)",canal:utmMed||"(não informado)",phone:trafPhone,email:trafEmail,comPreco});
+    }
+    for(const{r,ms:orgMs,comPreco:orgComPreco} of orgResolved){
+      const d=orgMs!=null?msToISO(orgMs-3*60*60*1000):null;
+      const utmSrc=(r["utm_source"]||"").trim();
+      const utmMed=(r["utm_medium"]||"").trim();
+      const orgPhone=normalizePhone(r["Qual seu WhatsApp?"]), orgEmail=normalizeEmail(r["Qual seu e-mail?"]);
+      noteFicha("org",orgPhone,orgEmail,orgMs,null,null,utmSrc,utmMed,orgComPreco);
+      if(d)fichaOrigem.push({date:d,ms:orgMs,tipo:"org",origem:utmSrc||"(não informado)",canal:utmMed||"(não informado)",phone:orgPhone,email:orgEmail,comPreco:orgComPreco});
+    }
+
+    // ── Fichas únicas: dedup por telefone OU e-mail (se qualquer um dos dois bater
+    // entre duas fichas, é a mesma pessoa) — mantém sempre a ficha mais antiga (a
+    // primeira que a pessoa preencheu, em qualquer canal/origem). Union-Find: cada
+    // ficha vira um nó ligado ao seu telefone e ao seu e-mail; fichas que
+    // compartilham qualquer um dos dois caem no mesmo grupo.
+    function dedupFichas(fichas){
+      const parent={};
+      function find(x){ if(!(x in parent))parent[x]=x; while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x];} return x; }
+      function union(a,b){ const ra=find(a),rb=find(b); if(ra!==rb)parent[ra]=rb; }
+      fichas.forEach((f,i)=>{
+        const kRow="r:"+i; find(kRow);
+        if(f.phone){ union(kRow,"p:"+f.phone); }
+        if(f.email){ union(kRow,"e:"+f.email); }
+      });
+      const groups={};
+      fichas.forEach((f,i)=>{
+        const root=find("r:"+i);
+        if(!groups[root]||f.ms<groups[root].ms) groups[root]=f;
+      });
+      return Object.values(groups);
+    }
+    const fichaOrigemUnica=dedupFichas(fichaOrigem);
+
+    // ── Vendas → casar com tráfego ou orgânico via e-mail/telefone ──
+    // Uma venda é atribuída à ficha (tráfego ou orgânico) que a pessoa preencheu
+    // PRIMEIRO — ou seja, entre todas as fichas que batem com o e-mail/telefone da
+    // venda (em qualquer uma das duas abas), pega a de "Submitted At" mais antigo e
+    // usa a origem dela. Isso cobre o caso de alguém preencher no orgânico e depois
+    // preencher de novo vindo do tráfego: a venda continua sendo do orgânico.
+    // A "Base Vendas" não tem data própria — a data usada é a da ficha casada
+    // (primeira preenchida). Sem match nenhum → cai em "origem não identificada"
+    // (não entra em nenhum bucket de data, então fica de fora dos gráficos/filtros
+    // de período, mas conta no total de vendas e no faturamento).
+    // Vendas de tráfego casadas com anúncio/campanha (herdado da ficha) → vendaAttrib,
+    // usado nas colunas de Vendas/ROAS/Conversão das tabelas de Campanhas/Anúncios.
+    const vTrafD={}, vOrgD={};
+    let vTotal=0, vUnmatched=0, vFaturamento=0;
+    const vendaAttrib=[];
+    const vendaOrigem=[]; // vendas casadas (tráfego+orgânico) com origem/canal: {date,tipo,origem,canal,valor,comPreco}
+    for(const r of vendasRows){
+      const nome=(r["Nome"]||"").trim();
+      const ph=normalizePhone(r["Telefone"]);
+      const em=normalizeEmail(r["E-mail"]);
+      if(!nome&&!ph&&!em)continue; // linha vazia
+      vTotal++;
+      const valor=parseBRL(r["Valor"]);
+      vFaturamento+=valor;
+      const candidates=[];
+      if(ph&&earliestByPhone[ph])candidates.push(earliestByPhone[ph]);
+      if(em&&earliestByEmail[em])candidates.push(earliestByEmail[em]);
+      if(candidates.length){
+        candidates.sort((a,b)=>a.ms-b.ms);
+        const best=candidates[0];
+        if(best.type==="traf"){
+          vTrafD[best.iso]=(vTrafD[best.iso]||0)+1;
+          vendaAttrib.push({date:best.iso,adName:best.adName||"(sem anúncio)",campName:best.campName||"(sem campanha)",valor});
+        }else{
+          vOrgD[best.iso]=(vOrgD[best.iso]||0)+1;
+        }
+        vendaOrigem.push({date:best.iso,tipo:best.type,origem:best.origem||"(não informado)",canal:best.canal||"(não informado)",valor,comPreco:best.comPreco});
+      }else{
+        vUnmatched++;
+      }
+    }
+
+    S.trafego=trafD; S.trafegoComPreco=trafDComPreco; S.trafegoConv=trafDConv;
+    S.organico=orgD; S.organicoComPreco=orgDComPreco; S.organicoConv=orgDConv;
+    S.meta=mD; S.metaRows=metaRows; S.adIdMap=adIdMap; S.fichaAttrib=fichaAttrib; S.vendaAttrib=vendaAttrib;
+    S.fichaOrigem=fichaOrigem; S.fichaOrigemUnica=fichaOrigemUnica; S.vendaOrigem=vendaOrigem;
+    S.vendasTraf=vTrafD; S.vendasOrg=vOrgD; S.vendasTotal=vTotal; S.vendasUnmatched=vUnmatched; S.vendasFaturamento=vFaturamento;
+
+    const allDates=[...new Set([...Object.keys(mD),...Object.keys(trafD),...Object.keys(orgD)])].sort();
+    S.updated=allDates.length?fDateBR(allDates[allDates.length-1]):"—";
+
+    if(!S.startDate){ S.startDate=nDaysAgoISO(29);S.endDate=todayISO();S.activeQuick="30d"; }
+  }catch(e){
+    S.error="Erro ao carregar dados do Google Sheets: "+e.message;
+    console.error(e);
+  }
+  S.loading=false;
+  render();
+}
+
+// ── Derived metrics ───────────────────────────────────────────────────────
+function getDaily(start,end){
+  const allDates=new Set([...Object.keys(S.meta),...Object.keys(S.trafego),...Object.keys(S.organico)]);
+  return Array.from(allDates).sort().filter(d=>d>=start&&d<=end).map(date=>{
+    const m=S.meta[date]||{spend:0};
+    const traf=S.trafego[date]||0;
+    const trafComPreco=S.trafegoComPreco[date]||0;
+    const org=S.organico[date]||0;
+    const orgComPreco=S.organicoComPreco[date]||0;
+    return{date,label:fDate(date),spend:m.spend||0,trafficLeads:traf,trafficLeadsComPreco:trafComPreco,organicLeads:org,organicLeadsComPreco:orgComPreco,
+      cpl:trafComPreco>0?(m.spend||0)/trafComPreco:0,
+      cplTotal:traf>0?(m.spend||0)/traf:0};
+  });
+}
+function getTotals(daily){
+  return daily.reduce((a,d)=>({
+    spend:a.spend+d.spend,
+    trafficLeads:a.trafficLeads+d.trafficLeads,
+    trafficLeadsComPreco:a.trafficLeadsComPreco+d.trafficLeadsComPreco,
+    organicLeads:a.organicLeads+d.organicLeads,
+    organicLeadsComPreco:a.organicLeadsComPreco+d.organicLeadsComPreco,
+  }),{spend:0,trafficLeads:0,trafficLeadsComPreco:0,organicLeads:0,organicLeadsComPreco:0});
+}
+// s,e = null → todo o período (all-time)
+function periodTotals(s,e){
+  const dates=new Set([...Object.keys(S.trafego),...Object.keys(S.organico),...Object.keys(S.meta)]);
+  let traf=0,trafComPreco=0,trafConv=0,org=0,spend=0,clicks=0,impressions=0,landingViews=0;
+  for(const d of dates){
+    if(s!==null&&d<s)continue;
+    if(e!==null&&d>e)continue;
+    traf+=S.trafego[d]||0;
+    trafComPreco+=S.trafegoComPreco[d]||0;
+    trafConv+=(S.trafegoConv&&S.trafegoConv[d])||0;
+    org+=S.organico[d]||0;
+    const m=S.meta[d];
+    if(m){ spend+=m.spend||0; clicks+=m.clicks||0; impressions+=m.impressions||0; landingViews+=m.landingViews||0; }
+  }
+  return{traf,trafComPreco,org,spend,clicks,impressions,landingViews,
+    cpl:trafComPreco>0?spend/trafComPreco:0,       // Custo/ficha com preço (tem meta definida)
+    cplTotal:traf>0?spend/traf:0,                   // Custo/ficha total (com+sem preço)
+    cpc:clicks>0?spend/clicks:0,
+    ctr:impressions>0?(clicks/impressions)*100:0,
+    cpm:impressions>0?(spend/impressions)*1000:0,
+    // Tx conversão formulário = fichas / page views da landing. Usa "trafConv":
+    // com preço antes do corte de 27/07 ~19h (quando a pergunta ainda existia),
+    // ficha inteira (com+sem preço) a partir do corte, já que preço não é mais
+    // respondido por ninguém dali pra frente.
+    txForm:landingViews>0?(trafConv/landingViews)*100:0};
+}
+// ── Campanhas / Anúncios: agregação com cross-filtering ───────────────────
+function getMetaRowsInRange(start,end){
+  return S.metaRows.filter(r=>r.date>=start&&r.date<=end);
+}
+// onlyComPreco=true (padrão) → só conta ficha que respondeu preço ("com preço").
+// onlyComPreco=false → conta toda ficha atribuída (com+sem preço) — "totais".
+function getFichasForCamp(start,end,campName,onlyComPreco=true){
+  let n=0;
+  for(const f of S.fichaAttrib){
+    if(f.date<start||f.date>end)continue;
+    if(f.campName!==campName)continue;
+    if(onlyComPreco&&!f.comPreco)continue;
+    n++;
+  }
+  return n;
+}
+// campFilter: Set de nomes de campanha (ou null/vazio = não filtra, soma todas as campanhas do anúncio)
+function getFichasForAd(start,end,adName,campFilter,onlyComPreco=true){
+  let n=0;
+  for(const f of S.fichaAttrib){
+    if(f.date<start||f.date>end)continue;
+    if(f.adName!==adName)continue;
+    if(campFilter&&campFilter.size>0&&!campFilter.has(f.campName))continue;
+    if(onlyComPreco&&!f.comPreco)continue;
+    n++;
+  }
+  return n;
+}
+function getVendasForCamp(start,end,campName){
+  let n=0,valor=0;
+  for(const v of S.vendaAttrib){ if(v.date>=start&&v.date<=end&&v.campName===campName){n++;valor+=v.valor;} }
+  return {n,valor};
+}
+function getVendasForAd(start,end,adName,campFilter){
+  let n=0,valor=0;
+  for(const v of S.vendaAttrib){
+    if(v.date<start||v.date>end)continue;
+    if(v.adName!==adName)continue;
+    if(campFilter&&campFilter.size>0&&!campFilter.has(v.campName))continue;
+    n++;valor+=v.valor;
+  }
+  return {n,valor};
+}
+function getCampRows(start,end){
+  const rows=getMetaRowsInRange(start,end);
+  const byCamp={};
+  for(const r of rows){
+    const cn=r.campName||"(sem campanha)";
+    if(!byCamp[cn])byCamp[cn]={campName:cn,spend:0,clicks:0,impressions:0,videoViews:0,video75:0};
+    byCamp[cn].spend+=r.spend;byCamp[cn].clicks+=r.clicks;byCamp[cn].impressions+=r.impressions;
+    byCamp[cn].videoViews+=r.videoViews;byCamp[cn].video75+=r.video75;
+  }
+  return Object.values(byCamp).map(c=>{
+    const leads=getFichasForCamp(start,end,c.campName,true);
+    const leadsTotal=getFichasForCamp(start,end,c.campName,false);
+    const {n:vendas,valor:valorVendas}=getVendasForCamp(start,end,c.campName);
+    return {...c,leads,leadsTotal,vendas,valorVendas,
+      cpc:c.clicks>0?c.spend/c.clicks:0, ctr:c.impressions>0?(c.clicks/c.impressions)*100:0,
+      cpm:c.impressions>0?(c.spend/c.impressions)*1000:0, cpl:leads>0?c.spend/leads:0,
+      cplTotal:leadsTotal>0?c.spend/leadsTotal:0,
+      roas:c.spend>0?valorVendas/c.spend:0,
+      custoVenda:vendas>0?c.spend/vendas:0,
+      convFichaVenda:leads>0?(vendas/leads)*100:0};
+  });
+}
+// selectedCamps: Set — quando vazio, consolida o anúncio em TODAS as campanhas onde ele aparece
+// (mesmo nome, IDs diferentes); quando preenchido, restringe investimento e fichas só àquela(s) campanha(s).
+function getAdRows(start,end,selectedCamps){
+  const hasSel=selectedCamps&&selectedCamps.size>0;
+  let rows=getMetaRowsInRange(start,end);
+  if(hasSel)rows=rows.filter(r=>selectedCamps.has(r.campName));
+  const byAd={};
+  for(const r of rows){
+    const an=r.adName||"(sem anúncio)";
+    if(!byAd[an])byAd[an]={adName:an,spend:0,clicks:0,impressions:0,videoViews:0,video75:0,igUrl:"",camps:new Set()};
+    byAd[an].spend+=r.spend;byAd[an].clicks+=r.clicks;byAd[an].impressions+=r.impressions;
+    byAd[an].videoViews+=r.videoViews;byAd[an].video75+=r.video75;
+    if(!byAd[an].igUrl&&r.igUrl)byAd[an].igUrl=r.igUrl;
+    if(r.campName)byAd[an].camps.add(r.campName);
+  }
+  return Object.values(byAd).map(a=>{
+    const leads=getFichasForAd(start,end,a.adName,hasSel?selectedCamps:null,true);
+    const leadsTotal=getFichasForAd(start,end,a.adName,hasSel?selectedCamps:null,false);
+    const {n:vendas,valor:valorVendas}=getVendasForAd(start,end,a.adName,hasSel?selectedCamps:null);
+    return {...a,leads,leadsTotal,vendas,valorVendas,campNames:[...a.camps].join(", "),
+      cpc:a.clicks>0?a.spend/a.clicks:0, ctr:a.impressions>0?(a.clicks/a.impressions)*100:0,
+      cpm:a.impressions>0?(a.spend/a.impressions)*1000:0, cpl:leads>0?a.spend/leads:0,
+      cplTotal:leadsTotal>0?a.spend/leadsTotal:0,
+      roas:a.spend>0?valorVendas/a.spend:0,
+      custoVenda:vendas>0?a.spend/vendas:0,
+      convFichaVenda:leads>0?(vendas/leads)*100:0};
+  });
+}
+
+// ── Aba Fichas: Origem (UTM source) e Canal ───────────────────────────────
+// qual: 'todas' | 'traf' | 'org' — filtra por qualificação da ficha (fonte)
+function passQual(tipo,qual){ return !qual||qual==="todas"||tipo===qual; }
+// Tabela Origem: de-para de tráfego pago + nomes amigáveis pro restante.
+const ORIGEM_MAP = {
+  "wp":"Whatsapp",
+  "wp-antigos":"Whatsapp",
+  "wp-suporte":"Whatsapp",
+  "youtube":"Youtube",
+  "qrcode":"Youtube",
+  "api-pvd":"API",
+  "instagram":"Instagram Orgânico",
+  "em,ActiveCampaign":"Email",
+  "em":"Email",
+  "(não informado)":"Sem UTM",
+  "xxxxx":"Sem UTM",
+};
+function normOrigem(o){
+  if(o&&o.includes("FBAds"))return "Tráfego";
+  return ORIGEM_MAP[o]||o;
+}
+// Tabela Canal: nome bruto da UTM source (sem tradução), exceto:
+//  • tráfego pago (FBAds) → agrupado em "Tráfego" (igual à tabela de Origem)
+//  • "instagram" → detalhado por medium, ex: "instagram-live", "instagram-bio"
+function canalKey(origem,canal){
+  if(origem&&origem.includes("FBAds"))return "Tráfego";
+  if(origem==="instagram")return `${origem}-${canal||"(não informado)"}`;
+  return origem||"(não informado)";
+}
+// fichas: S.fichaOrigem (totais) ou S.fichaOrigemUnica (deduplicadas) — conforme S.fichasMode.
+// vendas: lista de vendas já filtrada pelo mesmo critério "com preço/sem preço/total" da
+// aba Fichas — pra Vendas/Conversão baterem com o que as outras colunas estão mostrando.
+function getOrigemRows(fichas,vendas,start,end,qual){
+  const byFichas={}, byVendas={};
+  for(const f of fichas){
+    if(f.date<start||f.date>end)continue;
+    if(!passQual(f.tipo,qual))continue;
+    const o=normOrigem(f.origem);
+    byFichas[o]=(byFichas[o]||0)+1;
+  }
+  for(const v of vendas){
+    if(v.date<start||v.date>end)continue;
+    if(!passQual(v.tipo,qual))continue;
+    const o=normOrigem(v.origem);
+    byVendas[o]=(byVendas[o]||0)+1;
+  }
+  const origens=new Set([...Object.keys(byFichas),...Object.keys(byVendas)]);
+  const totalFichas=Object.values(byFichas).reduce((a,b)=>a+b,0);
+  return [...origens].map(o=>{
+    const fichas2=byFichas[o]||0, vendas2=byVendas[o]||0;
+    return {origem:o,fichas:fichas2,vendas:vendas2,conv:fichas2>0?(vendas2/fichas2)*100:0,
+      repres:totalFichas>0?(fichas2/totalFichas)*100:0};
+  });
+}
+// selectedOrigens: Set de labels JÁ TRADUZIDOS (os que aparecem clicáveis na tabela de
+// Origem) — quando preenchido, restringe o canal só às fichas/vendas daquela(s) origem(ns).
+function getCanalRows(fichas,vendas,start,end,qual,selectedOrigens){
+  const hasSel=selectedOrigens&&selectedOrigens.size>0;
+  const byFichas={}, byVendas={};
+  for(const f of fichas){
+    if(f.date<start||f.date>end)continue;
+    if(!passQual(f.tipo,qual))continue;
+    if(hasSel&&!selectedOrigens.has(normOrigem(f.origem)))continue;
+    const c=canalKey(f.origem,f.canal);
+    byFichas[c]=(byFichas[c]||0)+1;
+  }
+  for(const v of vendas){
+    if(v.date<start||v.date>end)continue;
+    if(!passQual(v.tipo,qual))continue;
+    if(hasSel&&!selectedOrigens.has(normOrigem(v.origem)))continue;
+    const c=canalKey(v.origem,v.canal);
+    byVendas[c]=(byVendas[c]||0)+1;
+  }
+  const canais=new Set([...Object.keys(byFichas),...Object.keys(byVendas)]);
+  return [...canais].map(c=>{
+    const fichas2=byFichas[c]||0, vendas2=byVendas[c]||0;
+    return {canal:c,fichas:fichas2,vendas:vendas2,conv:fichas2>0?(vendas2/fichas2)*100:0};
+  });
+}
+// Fichas reais por dia, filtradas pela(s) origem(ns)/canal(is) selecionado(s) na aba Fichas
+// (sem seleção nenhuma = total geral). Usado no gráfico "Fichas por dia".
+function getFichasPorDia(fichas,start,end,qual,selectedOrigens,selectedCanais){
+  const hasOrigemSel=selectedOrigens&&selectedOrigens.size>0;
+  const hasCanalSel=selectedCanais&&selectedCanais.size>0;
+  const byDate={};
+  for(const f of fichas){
+    if(f.date<start||f.date>end)continue;
+    if(!passQual(f.tipo,qual))continue;
+    if(hasOrigemSel&&!selectedOrigens.has(normOrigem(f.origem)))continue;
+    if(hasCanalSel&&!selectedCanais.has(canalKey(f.origem,f.canal)))continue;
+    byDate[f.date]=(byDate[f.date]||0)+1;
+  }
+  return Object.keys(byDate).sort().map(d=>({date:d,label:fDate(d),fichas:byDate[d]}));
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function navTo(page){
+  S.currentPage=page;
+  window.scrollTo(0,0);
+  document.querySelectorAll(".page").forEach(el=>{
+    el.classList.toggle("active",el.id==="page-"+page);
+  });
+  render();
+}
+function applyQuickCurrent(k){
+  const t=todayISO();
+  const map={hoje:()=>({s:t,e:t}),ontem:()=>{const y=yesterdayISO();return{s:y,e:y}},
+    "7d":()=>({s:nDaysAgoISO(6),e:t}),"30d":()=>({s:nDaysAgoISO(29),e:t}),mes:()=>({s:firstOfMonthISO(),e:t})};
+  const r=map[k]?.();if(!r)return;
+  S.startDate=r.s;S.endDate=r.e;S.activeQuick=k;render();
+}
+function onDCCurrent(w,v){
+  if(w==="s")S.startDate=v;else S.endDate=v;S.activeQuick="";render();
+}
+function getCurrentPeriod(){return{s:S.startDate,e:S.endDate,q:S.activeQuick};}
+
+// ── Cross-filtering: Campanhas / Anúncios ──────────────────────────────────
+function toggleCamp(name){
+  if(S.selectedCamps.has(name))S.selectedCamps.delete(name);else S.selectedCamps.add(name);
+  renderAnuncios();
+}
+function clearCamps(){S.selectedCamps.clear();renderAnuncios();}
+function setCampSearch(v){S.campSearch=v;renderAnuncios();}
+function toggleAd(name){
+  if(S.selectedAds.has(name))S.selectedAds.delete(name);else S.selectedAds.add(name);
+  renderAnuncios();
+}
+function clearAds(){S.selectedAds.clear();renderAnuncios();}
+function setAdSearch(v){S.adSearch=v;renderAnuncios();}
+function sortCampanhas(col){
+  if(S.cSort.col===col)S.cSort.dir=S.cSort.dir==="asc"?"desc":"asc";else{S.cSort.col=col;S.cSort.dir="desc";}
+  renderAnuncios();
+}
+function sortAnuncios(col){
+  if(S.aSort.col===col)S.aSort.dir=S.aSort.dir==="asc"?"desc":"asc";else{S.aSort.col=col;S.aSort.dir="desc";}
+  renderAnuncios();
+}
+
+// ── Cross-filtering: aba Fichas (Origem / Canal) ───────────────────────────
+function setFichasQual(q){ S.fichasQual=q; renderFichas(); }
+function setFichasMode(v){ S.fichasMode=v; renderFichas(); }
+function setFichasPreco(v){ S.fichasPreco=v; renderFichas(); }
+function toggleOrigem(name){
+  if(S.selectedOrigens.has(name))S.selectedOrigens.delete(name);else S.selectedOrigens.add(name);
+  S.selectedCanais.clear(); // canal muda de lista quando a origem muda — limpa seleção antiga
+  renderFichas();
+}
+function clearOrigens(){S.selectedOrigens.clear();S.selectedCanais.clear();renderFichas();}
+function toggleCanal(name){
+  if(S.selectedCanais.has(name))S.selectedCanais.delete(name);else S.selectedCanais.add(name);
+  renderFichas();
+}
+function clearCanais(){S.selectedCanais.clear();renderFichas();}
+function setOrigemSearch(v){S.origemSearch=v;renderFichas();}
+function setCanalSearch(v){S.canalSearch=v;renderFichas();}
+function sortOrigens(col){
+  if(S.oSort.col===col)S.oSort.dir=S.oSort.dir==="asc"?"desc":"asc";else{S.oSort.col=col;S.oSort.dir="desc";}
+  renderFichas();
+}
+function sortCanais(col){
+  if(S.mSort.col===col)S.mSort.dir=S.mSort.dir==="asc"?"desc":"asc";else{S.mSort.col=col;S.mSort.dir="desc";}
+  renderFichas();
+}
+function copyAdResumo(){
+  const el=document.getElementById("page-anuncios");
+  const text=el?._adResumoText||"";if(!text)return;
+  navigator.clipboard.writeText(text).then(()=>{
+    document.querySelectorAll(".btn-copy-ads").forEach(b=>{
+      const orig=b.innerHTML;b.innerHTML="✓ Copiado!";b.style.color="#4ade80";
+      setTimeout(()=>{b.innerHTML=orig;b.style.color="";},1800);
+    });
+  }).catch(()=>alert("Não foi possível copiar. Selecione o texto manualmente."));
+}
+
+function renderHeader(){
+  const p=S.currentPage;
+  document.querySelectorAll("#hdr-tabs .htab").forEach((btn,i)=>{
+    const ids=["principal","fichas","vendas","anuncios","resumo"];
+    btn.classList.toggle("htab-active",ids[i]===p);
+  });
+  const per=getCurrentPeriod();
+  const QUICKS=["hoje","ontem","7d","30d","mes"];
+  const QLABEL={hoje:"Hoje",ontem:"Ontem","7d":"7 dias","30d":"30 dias",mes:"Este mês"};
+  const preEl=document.getElementById("hdr-presets");
+  if(preEl)preEl.innerHTML=QUICKS.map(k=>`<button class="btn-pre${per.q===k?" on":""}" onclick="applyQuickCurrent('${k}')">${QLABEL[k]}</button>`).join("");
+  const hs=document.getElementById("hdr-start");if(hs)hs.value=per.s||"";
+  const he=document.getElementById("hdr-end");if(he)he.value=per.e||"";
+  const bu=document.getElementById("btn-update");
+  if(bu){bu.textContent=S.loading?"↻ Carregando...":"↻ Atualizar";bu.disabled=S.loading;}
+}
+
+// ── Canvas / Chart helpers ────────────────────────────────────────────────
+const DPR=window.devicePixelRatio||1;
+const GRID_C="rgba(255,255,255,0.06)";
+const TICK_C="#6b7689";
+
+function initCanvas(id,cssW,cssH){
+  const c=document.getElementById(id);if(!c)return null;
+  cssW=Math.max(cssW,50);cssH=Math.max(cssH,50);
+  c.width=Math.round(cssW*DPR);c.height=Math.round(cssH*DPR);
+  c.style.width=cssW+"px";c.style.height=cssH+"px";
+  const ctx=c.getContext("2d");ctx.scale(DPR,DPR);
+  return ctx;
+}
+function drawLineArea(ctx,xP,yP,vals,color,fill=true){
+  if(vals.length<2)return;
+  if(fill){
+    const n=vals.length;
+    ctx.beginPath();ctx.moveTo(xP(0),yP(vals[0]));
+    for(let i=1;i<n;i++)ctx.lineTo(xP(i),yP(vals[i]));
+    ctx.lineTo(xP(n-1),yP(0));ctx.lineTo(xP(0),yP(0));ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,0,ctx.canvas.height/DPR);
+    g.addColorStop(0,color+"28");g.addColorStop(1,color+"00");
+    ctx.fillStyle=g;ctx.fill();
+  }
+  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([]);
+  ctx.moveTo(xP(0),yP(vals[0]));
+  for(let i=1;i<vals.length;i++)ctx.lineTo(xP(i),yP(vals[i]));
+  ctx.stroke();
+}
+
+// Dual-axis: Investimento (esq.) × Custo/ficha (dir.)
+function drawDualInvCpl(id,data,cssW,cssH){
+  const ctx=initCanvas(id,cssW,cssH);if(!ctx)return;
+  const P={t:14,r:58,b:28,l:64};
+  const cW=cssW-P.l-P.r,cH=cssH-P.t-P.b;
+  const lVals=data.map(d=>d.spend||0);
+  const rVals=data.map(d=>d.cpl||0);
+  const rValsTotal=data.map(d=>d.cplTotal||0);
+  const lMax=Math.max(...lVals,0.01)*1.15;
+  const rMax=Math.max(...rVals,...rValsTotal,META_CPL,0.01)*1.4;
+  const xP=i=>P.l+(data.length>1?i/(data.length-1):0.5)*cW;
+  const yPL=v=>P.t+cH-((v)/(lMax))*cH;
+  const yPR=v=>P.t+cH-((v)/(rMax))*cH;
+  ctx.setLineDash([]);
+  for(let i=0;i<=4;i++){
+    const y=P.t+(i/4)*cH;
+    ctx.strokeStyle=GRID_C;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cW,y);ctx.stroke();
+    ctx.fillStyle=TICK_C;ctx.font="10px 'DM Mono',monospace";
+    ctx.textAlign="right";ctx.fillText(fBRLShort(lMax-(i/4)*lMax),P.l-5,y+3.5);
+    ctx.textAlign="left";ctx.fillText("R$"+(rMax-(i/4)*rMax).toFixed(0),P.l+cW+5,y+3.5);
+  }
+  const mY=yPR(META_CPL);
+  ctx.strokeStyle=CHART_CPL+"55";ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(P.l,mY);ctx.lineTo(P.l+cW,mY);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=CHART_CPL;ctx.font="9px 'Inter',sans-serif";ctx.textAlign="left";
+  ctx.fillText("Meta R$"+META_CPL,P.l+cW+4,mY-3);
+  drawLineArea(ctx,xP,yPL,lVals,CHART_INV,true);
+  drawLineArea(ctx,xP,yPR,rVals,CHART_CPL,false);
+  drawLineArea(ctx,xP,yPR,rValsTotal,CHART_TRAF,false);
+  const step=data.length>60?7:data.length>30?3:data.length>14?2:1;
+  ctx.fillStyle=TICK_C;ctx.font="10px 'DM Mono',monospace";ctx.textAlign="center";ctx.setLineDash([]);
+  data.forEach((d,i)=>{if(i%step===0)ctx.fillText(d.label,xP(i),P.t+cH+18);});
+}
+
+function drawBars(ctx,xP,yP,yZero,vals,color,barW){
+  vals.forEach((v,i)=>{
+    const x=xP(i)-barW/2, y=Math.min(yP(v),yZero), h=Math.abs(yP(v)-yZero);
+    ctx.fillStyle=color+"cc";
+    ctx.fillRect(x,y,barW,Math.max(h,v>0?1:0));
+  });
+}
+// Barras de uma série só — usado nos gráficos de "Fichas por dia" (tráfego / orgânico)
+function drawBarSingle(id,data,key,color,cssW,cssH){
+  const ctx=initCanvas(id,cssW,cssH);if(!ctx)return;
+  const P={t:14,r:12,b:28,l:40};
+  const cW=cssW-P.l-P.r,cH=cssH-P.t-P.b;
+  const vals=data.map(d=>d[key]||0);
+  const maxV=Math.max(...vals,1)*1.15;
+  const n=data.length;
+  const barW=Math.max(4,Math.min(18,(cW/Math.max(n,1))*0.7));
+  const xP=i=>P.l+(n>1?i/(n-1):0.5)*cW;
+  const yP=v=>P.t+cH-(v/maxV)*cH;
+  ctx.setLineDash([]);
+  for(let i=0;i<=4;i++){
+    const y=P.t+(i/4)*cH;
+    ctx.strokeStyle=GRID_C;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cW,y);ctx.stroke();
+    ctx.fillStyle=TICK_C;ctx.font="9px 'DM Mono',monospace";ctx.textAlign="right";
+    ctx.fillText(Math.round(maxV-(i/4)*maxV),P.l-4,y+3);
+  }
+  drawBars(ctx,xP,yP,P.t+cH,vals,color,barW);
+  const step=n>60?7:n>30?3:n>14?2:1;
+  ctx.textAlign="center";
+  vals.forEach((v,i)=>{
+    if(v>0&&(n<=30||i%step===0)){
+      ctx.fillStyle="#e8edf6";ctx.font=`bold ${Math.min(10,Math.max(7,barW))}px 'DM Mono',monospace`;
+      ctx.fillText(v,xP(i),yP(v)-4);
+    }
+  });
+  ctx.fillStyle=TICK_C;ctx.font="9px 'DM Mono',monospace";
+  data.forEach((d,i)=>{if(i%step===0)ctx.fillText(d.label,xP(i),P.t+cH+18);});
+}
+// Igual a drawBarSingle, mas formata os valores como percentual (usado na conversão de fichas em vendas/dia)
+function drawBarPct(id,data,key,color,cssW,cssH){
+  const ctx=initCanvas(id,cssW,cssH);if(!ctx)return;
+  const P={t:14,r:12,b:28,l:46};
+  const cW=cssW-P.l-P.r,cH=cssH-P.t-P.b;
+  const vals=data.map(d=>d[key]||0);
+  const maxV=Math.max(...vals,1)*1.15;
+  const n=data.length;
+  const barW=Math.max(4,Math.min(18,(cW/Math.max(n,1))*0.7));
+  const xP=i=>P.l+(n>1?i/(n-1):0.5)*cW;
+  const yP=v=>P.t+cH-(v/maxV)*cH;
+  ctx.setLineDash([]);
+  for(let i=0;i<=4;i++){
+    const y=P.t+(i/4)*cH;
+    ctx.strokeStyle=GRID_C;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+cW,y);ctx.stroke();
+    ctx.fillStyle=TICK_C;ctx.font="9px 'DM Mono',monospace";ctx.textAlign="right";
+    ctx.fillText((maxV-(i/4)*maxV).toFixed(1)+"%",P.l-4,y+3);
+  }
+  drawBars(ctx,xP,yP,P.t+cH,vals,color,barW);
+  const step=n>60?7:n>30?3:n>14?2:1;
+  ctx.textAlign="center";
+  vals.forEach((v,i)=>{
+    if(v>0&&(n<=30||i%step===0)){
+      ctx.fillStyle="#e8edf6";ctx.font=`bold ${Math.min(10,Math.max(7,barW))}px 'DM Mono',monospace`;
+      ctx.fillText(v.toFixed(1)+"%",xP(i),yP(v)-4);
+    }
+  });
+  ctx.fillStyle=TICK_C;ctx.font="9px 'DM Mono',monospace";
+  data.forEach((d,i)=>{if(i%step===0)ctx.fillText(d.label,xP(i),P.t+cH+18);});
+}
+
+function setupTip(cid,tid,data,lines,padL=58,padR=12){
+  const c=document.getElementById(cid),t=document.getElementById(tid);
+  if(!c||!t)return;
+  c.addEventListener("mousemove",e=>{
+    const rect=c.getBoundingClientRect();
+    const relX=(e.clientX-rect.left)-padL;
+    const cW=rect.width-padL-padR;
+    if(relX<0||relX>cW||!data.length){t.style.display="none";return;}
+    const d=data[Math.max(0,Math.min(Math.round((relX/cW)*(data.length-1)),data.length-1))];
+    let h=`<div class="tl">${d.label||d.date}</div>`;
+    lines.forEach(l=>{
+      h+=`<div class="tr"><span style="color:${l.color}">${l.name}</span><span class="tv">${(l.fmt||fBRL)(+(d[l.key])||0)}</span></div>`;
+    });
+    t.innerHTML=h;t.style.display="block";
+    const tw=t.offsetWidth,x=e.clientX-rect.left;
+    t.style.left=(x+12+tw>rect.width-8?x-tw-12:x+12)+"px";
+    t.style.top=(e.clientY-rect.top-20)+"px";
+  });
+  c.addEventListener("mouseleave",()=>t.style.display="none");
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────
+function kpiCard(lbl,val,sub,color,small=false,rawVal=null,meta=null,higher=null){
+  const bord=(rawVal!==null&&meta!==null)?statusBorder(rawVal,meta,higher):"var(--border)";
+  return `<div class="kc" style="border-color:${bord}">
+    <div class="kc-lbl">${lbl}</div>
+    <div class="kc-val${small?" kc-val-sm":""}" style="color:${color||"var(--text-strong)"}">${val}</div>
+    ${sub?`<div class="kc-sub">${sub}</div>`:""}
+  </div>`;
+}
+function statusLegend(){
+  return `<div class="status-legend">
+    <span class="sl"><span class="sl-dot" style="background:#34d399"></span>Dentro da meta</span>
+    <span class="sl"><span class="sl-dot" style="background:#fbbf24"></span>Até 10% fora</span>
+    <span class="sl"><span class="sl-dot" style="background:#f87171"></span>Mais de 10% fora</span>
+  </div>`;
+}
+
+// ── Render: Principal ─────────────────────────────────────────────────────
+function renderPrincipal(){
+  const el=document.getElementById("page-principal");if(!el)return;
+  const daily=getDaily(S.startDate,S.endDate);
+  const tot=getTotals(daily);
+  const cplTotal=tot.trafficLeads>0?tot.spend/tot.trafficLeads:0;
+  const cpl=tot.trafficLeadsComPreco>0?tot.spend/tot.trafficLeadsComPreco:0;
+  const cplC=cpl>0?statusColor(cpl,META_CPL,false):"var(--text-strong)";
+  el.innerHTML=`
+    <div class="hdr" style="margin-bottom:6px">
+      <div>
+        <div class="hdr-title">LDI — Carrinho</div>
+        <div class="hdr-sub">atualizado em: ${S.updated||"—"}${daily.length>0?` · ${daily.length} dias no período`:""} · "com preço" = respondeu a pergunta de valor/pagamento</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">${statusLegend()}</div>
+    </div>
+    ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
+    <div class="g3" style="margin-bottom:13px">
+      ${kpiCard("Investimento",fBRL(tot.spend),"","var(--text-strong)")}
+      ${kpiCard("Custo/ficha com preço",cpl>0?fBRL(cpl):"—",`meta ${fBRL(META_CPL)}`,cplC,false,cpl>0?cpl:null,cpl>0?META_CPL:null,false)}
+      ${kpiCard("Custo/ficha total",tot.trafficLeads>0?fBRL(cplTotal):"—","","var(--text-strong)")}
+    </div>
+    <div class="g3" style="margin-bottom:13px">
+      ${kpiCard("Fichas tráfego (com preço)",tot.trafficLeadsComPreco.toLocaleString("pt-BR"),"","var(--text-strong)")}
+      ${kpiCard("Fichas tráfego (sem preço)",(tot.trafficLeads-tot.trafficLeadsComPreco).toLocaleString("pt-BR"),"","var(--text-strong)")}
+      ${kpiCard("Fichas tráfego (totais)",tot.trafficLeads.toLocaleString("pt-BR"),"","var(--text-strong)")}
+    </div>
+    <div class="g3" style="margin-bottom:16px">
+      ${kpiCard("Fichas orgânico (com preço)",tot.organicLeadsComPreco.toLocaleString("pt-BR"),"","var(--text-strong)")}
+      ${kpiCard("Fichas orgânico (sem preço)",(tot.organicLeads-tot.organicLeadsComPreco).toLocaleString("pt-BR"),"","var(--text-strong)")}
+      ${kpiCard("Fichas orgânico (totais)",tot.organicLeads.toLocaleString("pt-BR"),"","var(--text-strong)")}
+    </div>
+    <div class="cc" style="margin-bottom:12px;position:relative">
+      <div class="ch">
+        <span class="ct">Investimento × Custo por Ficha (tráfego)</span>
+        <div class="lg">
+          <span class="li"><span class="ll" style="background:${CHART_INV}"></span>Invest. (esq.)</span>
+          <span class="li"><span class="ll" style="background:${CHART_CPL}"></span>Custo/ficha com preço (dir.)</span>
+          <span class="li"><span class="ll" style="background:${CHART_TRAF}"></span>Custo/ficha total (dir.)</span>
+          <span class="li"><span class="ll" style="background:${CHART_CPL};opacity:.4;border-top:1px dashed ${CHART_CPL}"></span>Meta R$${META_CPL}</span>
+        </div>
+      </div>
+      <div style="position:relative"><canvas id="c-dual"></canvas><div class="tip" id="t-dual"></div></div>
+    </div>
+    <div class="cc" style="position:relative;margin-bottom:12px">
+      <div class="ch">
+        <span class="ct">Fichas com preço por dia — Tráfego</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_TRAF}"></span>Fichas/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-traf-preco"></canvas><div class="tip" id="t-traf-preco"></div></div>
+    </div>
+    <div class="cc" style="position:relative;margin-bottom:12px">
+      <div class="ch">
+        <span class="ct">Fichas por dia — Tráfego</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_TRAF}"></span>Fichas/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-traf"></canvas><div class="tip" id="t-traf"></div></div>
+    </div>
+    <div class="cc" style="position:relative">
+      <div class="ch">
+        <span class="ct">Fichas por dia — Orgânico</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_ORG}"></span>Fichas/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-org"></canvas><div class="tip" id="t-org"></div></div>
+    </div>
+    ${daily.length===0?`<div class="err" style="margin-top:12px">Nenhum dado no período selecionado.</div>`:""}
+    <div class="foot">LDI · Carrinho · conectado ao Google Sheets</div>`;
+  requestAnimationFrame(()=>{
+    const box1=document.getElementById("c-dual")?.parentElement;
+    if(box1)drawDualInvCpl("c-dual",daily,box1.clientWidth,220);
+    const boxP=document.getElementById("c-traf-preco")?.parentElement;
+    if(boxP)drawBarSingle("c-traf-preco",daily,"trafficLeadsComPreco",CHART_TRAF,boxP.clientWidth,200);
+    const box2=document.getElementById("c-traf")?.parentElement;
+    if(box2)drawBarSingle("c-traf",daily,"trafficLeads",CHART_TRAF,box2.clientWidth,200);
+    const box3=document.getElementById("c-org")?.parentElement;
+    if(box3)drawBarSingle("c-org",daily,"organicLeads",CHART_ORG,box3.clientWidth,200);
+    setupTip("c-dual","t-dual",daily,[
+      {name:"Investimento",color:CHART_INV,key:"spend",fmt:fBRL},
+      {name:"Custo/ficha com preço",color:CHART_CPL,key:"cpl",fmt:fBRL},
+      {name:"Custo/ficha total",color:CHART_TRAF,key:"cplTotal",fmt:fBRL}]);
+    setupTip("c-traf-preco","t-traf-preco",daily,[{name:"Fichas com preço",color:CHART_TRAF,key:"trafficLeadsComPreco",fmt:v=>String(v)}],40,12);
+    setupTip("c-traf","t-traf",daily,[{name:"Fichas tráfego",color:CHART_TRAF,key:"trafficLeads",fmt:v=>String(v)}],40,12);
+    setupTip("c-org","t-org",daily,[{name:"Fichas orgânico",color:CHART_ORG,key:"organicLeads",fmt:v=>String(v)}],40,12);
+  });
+}
+
+// ── Render: Fichas (Origem / Canal) ───────────────────────────────────────
+function renderFichas(){
+  const el=document.getElementById("page-fichas");if(!el)return;
+  const start=S.startDate,end=S.endDate;
+  const per=getCurrentPeriod();
+  const escName=s=>String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  const qual=S.fichasQual;
+  // "Totais" = toda ficha preenchida conta. "Únicas" = deduplicadas por telefone/e-mail,
+  // mantendo só a primeira ficha de cada pessoa (evita contar a mesma pessoa 2x quando
+  // ela preenche em canais diferentes).
+  let fichasSrc=S.fichasMode==="unicas"?S.fichaOrigemUnica:S.fichaOrigem;
+  // Filtro adicional por "com preço" (respondeu a pergunta de valor) × "sem preço" ×
+  // total (sem filtro nenhum) — aplicado por cima do Totais/Únicas acima. As vendas
+  // seguem o MESMO filtro (pela ficha casada com a venda), pra bater com as outras colunas.
+  let vendasSrc=S.vendaOrigem;
+  if(S.fichasPreco==="comPreco"){
+    fichasSrc=fichasSrc.filter(f=>f.comPreco);
+    vendasSrc=vendasSrc.filter(v=>v.comPreco);
+  }else if(S.fichasPreco==="semPreco"){
+    fichasSrc=fichasSrc.filter(f=>!f.comPreco);
+    vendasSrc=vendasSrc.filter(v=>!v.comPreco);
+  }
+
+  const origemRowsAll=getOrigemRows(fichasSrc,vendasSrc,start,end,qual);
+  const _oq=S.origemSearch.trim().toLowerCase();
+  const origemRows=_oq?origemRowsAll.filter(o=>o.origem.toLowerCase().includes(_oq)):origemRowsAll;
+  const {col:oCol,dir:oDir}=S.oSort;
+  const sortedOrigens=[...origemRows].sort((a,b)=>{
+    const av=a[oCol]??0,bv=b[oCol]??0;
+    if(typeof av==="string")return oDir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+    return oDir==="asc"?av-bv:bv-av;
+  });
+
+  const canalRowsAll=getCanalRows(fichasSrc,vendasSrc,start,end,qual,S.selectedOrigens);
+  const _mq=S.canalSearch.trim().toLowerCase();
+  const canalRows=_mq?canalRowsAll.filter(c=>c.canal.toLowerCase().includes(_mq)):canalRowsAll;
+  const {col:mCol,dir:mDir}=S.mSort;
+  const sortedCanais=[...canalRows].sort((a,b)=>{
+    const av=a[mCol]??0,bv=b[mCol]??0;
+    if(typeof av==="string")return mDir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+    return mDir==="asc"?av-bv:bv-av;
+  });
+
+  const tot=origemRowsAll.reduce((a,o)=>({fichas:a.fichas+o.fichas,vendas:a.vendas+o.vendas}),{fichas:0,vendas:0});
+  const totConv=tot.fichas>0?(tot.vendas/tot.fichas)*100:0;
+
+  // Volume de fichas duplicadas — sempre comparando totais × únicas no período (independe
+  // do seletor "Totais/Únicas" acima, que só decide o que as tabelas/gráfico usam).
+  const totFichasAll=getOrigemRows(S.fichaOrigem,S.vendaOrigem,start,end,qual).reduce((a,o)=>a+o.fichas,0);
+  const totFichasUnicas=getOrigemRows(S.fichaOrigemUnica,S.vendaOrigem,start,end,qual).reduce((a,o)=>a+o.fichas,0);
+  const fichasDuplicadas=totFichasAll-totFichasUnicas;
+  const pctDuplicadas=totFichasAll>0?(fichasDuplicadas/totFichasAll)*100:0;
+
+  // Gráfico "Fichas por dia" — mostra só a(s) origem(ns)/canal(is) selecionado(s), ou o
+  // total geral quando nada está selecionado.
+  const fichasPorDia=getFichasPorDia(fichasSrc,start,end,qual,S.selectedOrigens,S.selectedCanais);
+  const chartSelParts=[...S.selectedOrigens,...S.selectedCanais];
+  const chartTitle=chartSelParts.length>0?chartSelParts.join(", "):"Total";
+
+  function thO(colKey,lbl){
+    const active=oCol===colKey;
+    const arrow=active?(oDir==="asc"?" ↑":" ↓"):" ↕";
+    return `<th onclick="sortOrigens('${colKey}')" style="text-align:right;cursor:pointer">${lbl}<span style="color:${active?"#60a5fa":"var(--hint)"};margin-left:3px">${arrow}</span></th>`;
+  }
+  function thM(colKey,lbl){
+    const active=mCol===colKey;
+    const arrow=active?(mDir==="asc"?" ↑":" ↓"):" ↕";
+    return `<th onclick="sortCanais('${colKey}')" style="text-align:right;cursor:pointer">${lbl}<span style="color:${active?"#60a5fa":"var(--hint)"};margin-left:3px">${arrow}</span></th>`;
+  }
+
+  el.innerHTML=`
+    <div class="hdr" style="margin-bottom:6px">
+      <div>
+        <div class="hdr-title">Fichas</div>
+        <div class="hdr-sub">${per.s&&per.e?`${fDateBR(per.s)} → ${fDateBR(per.e)}`:""} · ${sortedOrigens.length} origens · ${sortedCanais.length} canais</div>
+      </div>
+    </div>
+    ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--hint)">Fichas:</span>
+      <div class="presets">
+        <button class="btn-pre${S.fichasMode==="totais"?" on":""}" onclick="setFichasMode('totais')">Totais</button>
+        <button class="btn-pre${S.fichasMode==="unicas"?" on":""}" onclick="setFichasMode('unicas')">Únicas</button>
+      </div>
+      <span style="font-size:10px;color:var(--hint)">${S.fichasMode==="unicas"?"deduplicadas por telefone/e-mail — considera só a 1ª ficha de cada pessoa":"toda ficha preenchida conta, mesmo repetida"}</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--hint)">Tipo de ficha:</span>
+      <div class="presets">
+        <button class="btn-pre${S.fichasPreco==="total"?" on":""}" onclick="setFichasPreco('total')">Total</button>
+        <button class="btn-pre${S.fichasPreco==="comPreco"?" on":""}" onclick="setFichasPreco('comPreco')">Com preço</button>
+        <button class="btn-pre${S.fichasPreco==="semPreco"?" on":""}" onclick="setFichasPreco('semPreco')">Sem preço</button>
+      </div>
+      <span style="font-size:10px;color:var(--hint)">"com preço" = respondeu a pergunta de valor/pagamento</span>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      ${kpiCard("Fichas",tot.fichas.toLocaleString("pt-BR"),"","var(--text-strong)")}
+      ${kpiCard("Vendas",tot.vendas.toLocaleString("pt-BR"),"","var(--text-strong)")}
+      ${kpiCard("Conversão de ficha em venda",fPct(totConv),"","var(--text-strong)")}
+      ${kpiCard("Volume de fichas duplicadas",fPct(pctDuplicadas),`${fichasDuplicadas.toLocaleString("pt-BR")} fichas`,"var(--text-strong)")}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="section-lbl" style="margin-bottom:0">Origem da ficha (UTM source)</div>
+      ${S.selectedOrigens.size>0?`<button onclick="clearOrigens()" style="font-size:10px;padding:3px 9px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#f87171;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpar seleção (${S.selectedOrigens.size})</button>`:""}
+      <span style="font-size:10px;color:var(--hint)">Clique para filtrar o canal por origem</span>
+    </div>
+    <div style="position:relative;margin-bottom:10px">
+      <input oninput="setOrigemSearch(this.value)" value="${S.origemSearch}" placeholder="Buscar origem…" style="width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box"/>
+    </div>
+    <div class="cc" style="padding:0;overflow:hidden;margin-bottom:22px">
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th style="width:36px"></th>
+          <th onclick="sortOrigens('origem')" style="cursor:pointer">Origem</th>
+          ${thO("fichas","Quantidade de fichas")}
+          ${thO("vendas","Quantidade de vendas")}
+          ${thO("conv","Conv. ficha→venda")}
+          ${thO("repres","Representatividade")}
+        </tr></thead>
+        <tbody>
+          ${sortedOrigens.length===0?`<tr><td colspan="6" style="text-align:center;color:var(--hint);padding:20px">Sem fichas no período selecionado</td></tr>`:
+          sortedOrigens.map(o=>{
+            const sel=S.selectedOrigens.has(o.origem);
+            return `<tr onclick="toggleOrigem('${escName(o.origem)}')" style="cursor:pointer;background:${sel?"rgba(16,185,129,.1)":"transparent"}">
+              <td style="text-align:center">${chkBox(sel)}</td>
+              <td style="color:${sel?"#10b981":"var(--text)"};font-weight:${sel?600:400}">${o.origem}</td>
+              <td class="mono" style="text-align:right">${o.fichas.toLocaleString("pt-BR")}</td>
+              <td class="mono" style="text-align:right">${o.vendas.toLocaleString("pt-BR")}</td>
+              <td class="mono" style="text-align:right">${o.fichas>0?fPct(o.conv):"—"}</td>
+              <td class="mono" style="text-align:right">${fPct(o.repres)}</td>
+            </tr>`;
+          }).join("")}
+          ${origemRowsAll.length>0?`
+          <tr style="background:rgba(255,255,255,.03);border-top:2px solid var(--border-h)">
+            <td></td>
+            <td style="font-weight:700;color:var(--text-strong)">Total</td>
+            <td class="mono" style="text-align:right;font-weight:700;color:var(--text-strong)">${tot.fichas.toLocaleString("pt-BR")}</td>
+            <td class="mono" style="text-align:right;font-weight:700;color:var(--text-strong)">${tot.vendas.toLocaleString("pt-BR")}</td>
+            <td class="mono" style="text-align:right;font-weight:700;color:var(--text-strong)">${tot.fichas>0?fPct(totConv):"—"}</td>
+            <td class="mono" style="text-align:right;font-weight:700;color:var(--text-strong)">${tot.fichas>0?"100,00%":"—"}</td>
+          </tr>`:""}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="section-lbl" style="margin-bottom:0">Canal da ficha${S.selectedOrigens.size>0?` — dentro de: ${[...S.selectedOrigens].join(", ")}`:" — consolidado (todas as origens)"}</div>
+      ${S.selectedCanais.size>0?`<button onclick="clearCanais()" style="font-size:10px;padding:3px 9px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#f87171;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpar seleção (${S.selectedCanais.size})</button>`:""}
+      <span style="font-size:10px;color:var(--hint)">Clique em uma origem acima para filtrar · clique num canal para focar o gráfico</span>
+    </div>
+    <div style="position:relative;margin-bottom:10px">
+      <input oninput="setCanalSearch(this.value)" value="${S.canalSearch}" placeholder="Buscar canal…" style="width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box"/>
+    </div>
+    <div class="cc" style="padding:0;overflow:hidden;margin-bottom:22px">
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th style="width:36px"></th>
+          <th onclick="sortCanais('canal')" style="cursor:pointer">Canal</th>
+          ${thM("fichas","Quantidade de fichas")}
+          ${thM("vendas","Quantidade de vendas")}
+          ${thM("conv","Conv. ficha→venda")}
+        </tr></thead>
+        <tbody>
+          ${sortedCanais.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--hint);padding:20px">Sem fichas no período selecionado</td></tr>`:
+          sortedCanais.map(c=>{
+            const sel=S.selectedCanais.has(c.canal);
+            return `<tr onclick="toggleCanal('${escName(c.canal)}')" style="cursor:pointer;background:${sel?"rgba(16,185,129,.1)":"transparent"}">
+              <td style="text-align:center">${chkBox(sel)}</td>
+              <td style="color:${sel?"#10b981":"var(--text)"};font-weight:${sel?600:400}">${c.canal}</td>
+              <td class="mono" style="text-align:right">${c.fichas.toLocaleString("pt-BR")}</td>
+              <td class="mono" style="text-align:right">${c.vendas.toLocaleString("pt-BR")}</td>
+              <td class="mono" style="text-align:right">${c.fichas>0?fPct(c.conv):"—"}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div class="cc" style="position:relative">
+      <div class="ch">
+        <span class="ct">Fichas por dia — ${chartTitle}</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_TRAF}"></span>Fichas/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-fichas-dia"></canvas><div class="tip" id="t-fichas-dia"></div></div>
+    </div>
+    <div class="foot">LDI · Carrinho · conectado ao Google Sheets</div>`;
+  requestAnimationFrame(()=>{
+    const box=document.getElementById("c-fichas-dia")?.parentElement;
+    if(box)drawBarSingle("c-fichas-dia",fichasPorDia,"fichas",CHART_TRAF,box.clientWidth,220);
+    setupTip("c-fichas-dia","t-fichas-dia",fichasPorDia,[{name:"Fichas",color:CHART_TRAF,key:"fichas",fmt:v=>String(v)}],40,12);
+  });
+}
+
+// ── Render: Campanhas / Anúncios ──────────────────────────────────────────
+function chkBox(checked){
+  return `<div style="width:16px;height:16px;border-radius:4px;border:2px solid ${checked?"#10b981":"rgba(255,255,255,.2)"};background:${checked?"#10b981":"transparent"};display:flex;align-items:center;justify-content:center;margin:auto">
+    ${checked?`<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`:""}
+  </div>`;
+}
+function adResumoBlock(a){
+  const lines=[];
+  lines.push(`Nome do ad ⤵️`);
+  lines.push(a.adName);
+  lines.push(``);
+  if(a.igUrl)lines.push(a.igUrl);
+  lines.push(`Investimento:\t${fBRL(a.spend)}`);
+  lines.push(`Fichas: ${a.leads}`);
+  lines.push(`Cust/ ficha:\t${a.leads>0?fBRL(a.cpl):"—"}`);
+  lines.push(``);
+  lines.push(`CPC:\t${fBRL(a.cpc)}`);
+  lines.push(`CTR:\t${fPct(a.ctr)}`);
+  lines.push(`CPM:\t${fBRL(a.cpm)}`);
+  lines.push(`__________________________`);
+  return lines.join("\n");
+}
+function renderAnuncios(){
+  const el=document.getElementById("page-anuncios");if(!el)return;
+  const start=S.startDate,end=S.endDate;
+  const per=getCurrentPeriod();
+  const escName=s=>String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+
+  const campRowsAll=getCampRows(start,end);
+  const _cq=S.campSearch.trim().toLowerCase();
+  const campRows=_cq?campRowsAll.filter(c=>c.campName.toLowerCase().includes(_cq)):campRowsAll;
+  const {col:cCol,dir:cDir}=S.cSort;
+  const sortedCamps=[...campRows].sort((a,b)=>{
+    const av=a[cCol]??0,bv=b[cCol]??0;
+    if(typeof av==="string")return cDir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+    return cDir==="asc"?av-bv:bv-av;
+  });
+
+  const adRowsAll=getAdRows(start,end,S.selectedCamps);
+  const _aq=S.adSearch.trim().toLowerCase();
+  const adRowsF=_aq?adRowsAll.filter(a=>a.adName.toLowerCase().includes(_aq)):adRowsAll;
+  const {col,dir}=S.aSort;
+  const sortedAds=[...adRowsF].sort((a,b)=>{
+    const av=a[col]??0,bv=b[col]??0;
+    if(typeof av==="string")return dir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+    return dir==="asc"?av-bv:bv-av;
+  });
+
+  const tot=campRowsAll.reduce((a,c)=>({spend:a.spend+c.spend,clicks:a.clicks+c.clicks,impressions:a.impressions+c.impressions,leads:a.leads+c.leads,vendas:a.vendas+c.vendas,valorVendas:a.valorVendas+c.valorVendas}),{spend:0,clicks:0,impressions:0,leads:0,vendas:0,valorVendas:0});
+  const totCpl=tot.leads>0?tot.spend/tot.leads:0;
+  const totRoas=tot.spend>0?tot.valorVendas/tot.spend:0;
+  const totCustoVenda=tot.vendas>0?tot.spend/tot.vendas:0;
+  const totConvFichaVenda=tot.leads>0?(tot.vendas/tot.leads)*100:0;
+
+  const selAds=sortedAds.filter(a=>S.selectedAds.has(a.adName));
+  const adResumoText=selAds.length>0?selAds.map(a=>adResumoBlock(a)).join("\n"):"";
+  el._adResumoText=adResumoText;
+
+  function thC(colKey,lbl,isCamp){
+    const aC=isCamp?cCol:col, aD=isCamp?cDir:dir, active=aC===colKey;
+    const arrow=active?(aD==="asc"?" ↑":" ↓"):" ↕";
+    const fn=isCamp?`sortCampanhas('${colKey}')`:`sortAnuncios('${colKey}')`;
+    return `<th onclick="${fn}" style="text-align:right;cursor:pointer">${lbl}<span style="color:${active?"#60a5fa":"var(--hint)"};margin-left:3px">${arrow}</span></th>`;
+  }
+
+  el.innerHTML=`
+    <div class="hdr" style="margin-bottom:6px">
+      <div>
+        <div class="hdr-title">Campanhas / Anúncios</div>
+        <div class="hdr-sub">${per.s&&per.e?`${fDateBR(per.s)} → ${fDateBR(per.e)}`:""} · ${sortedCamps.length} campanhas · ${sortedAds.length} anúncios${S.selectedCamps.size>0?` · filtrado por ${S.selectedCamps.size} campanha(s)`:""}</div>
+      </div>
+    </div>
+    ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
+    <div class="g4" style="margin-bottom:13px">
+      ${kpiCard("Investimento",fBRL(tot.spend),"Base Meta","var(--text-strong)")}
+      ${kpiCard("Fichas",tot.leads.toLocaleString("pt-BR"),"tráfego atribuído a anúncio","var(--text-strong)")}
+      ${kpiCard("Custo/ficha",totCpl>0?fBRL(totCpl):"—",`meta ${fBRL(META_CPL)}`,totCpl>0?statusColor(totCpl,META_CPL,false):"var(--text-strong)",false,totCpl,META_CPL,false)}
+      ${kpiCard("Vendas",tot.vendas.toLocaleString("pt-BR"),"tráfego atribuído a anúncio","var(--text-strong)")}
+    </div>
+    <div class="g3" style="margin-bottom:20px">
+      ${kpiCard("ROAS",totRoas>0?totRoas.toFixed(2).replace(".",",")+"x":"—","","var(--text-strong)")}
+      ${kpiCard("Custo por venda",totCustoVenda>0?fBRL(totCustoVenda):"—","","var(--text-strong)")}
+      ${kpiCard("Conversão de ficha em venda",fPct(totConvFichaVenda),"","var(--text-strong)")}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="section-lbl" style="margin-bottom:0">Campanhas</div>
+      ${S.selectedCamps.size>0?`<button onclick="clearCamps()" style="font-size:10px;padding:3px 9px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#f87171;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpar seleção (${S.selectedCamps.size})</button>`:""}
+      <span style="font-size:10px;color:var(--hint)">Clique para filtrar os anúncios por campanha</span>
+    </div>
+    <div style="position:relative;margin-bottom:10px">
+      <input oninput="setCampSearch(this.value)" value="${S.campSearch}" placeholder="Buscar campanha…" style="width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box"/>
+    </div>
+    <div class="cc" style="padding:0;overflow:hidden;margin-bottom:22px">
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th style="width:36px"></th>
+          <th onclick="sortCampanhas('campName')" style="cursor:pointer">Campanha</th>
+          ${thC("spend","Investimento",true)}
+          ${thC("leads","Fichas com preço",true)}
+          ${thC("cpl","Custo/ficha com preço",true)}
+          ${thC("leadsTotal","Fichas totais",true)}
+          ${thC("cplTotal","Custo/ficha total",true)}
+          ${thC("cpc","CPC",true)}
+          ${thC("ctr","CTR",true)}
+          ${thC("cpm","CPM",true)}
+          ${thC("vendas","Vendas",true)}
+          ${thC("roas","ROAS",true)}
+          ${thC("convFichaVenda","Conv. ficha→venda",true)}
+        </tr></thead>
+        <tbody>
+          ${sortedCamps.length===0?`<tr><td colspan="13" style="text-align:center;color:var(--hint);padding:20px">Sem dados de campanhas no período (Base Meta ainda vazia)</td></tr>`:
+          sortedCamps.map(c=>{
+            const sel=S.selectedCamps.has(c.campName);
+            return `<tr onclick="toggleCamp('${escName(c.campName)}')" style="cursor:pointer;background:${sel?"rgba(16,185,129,.1)":"transparent"}">
+              <td style="text-align:center">${chkBox(sel)}</td>
+              <td style="color:${sel?"#10b981":"var(--text)"};font-weight:${sel?600:400}">${c.campName}</td>
+              <td class="mono" style="text-align:right">${fBRL(c.spend)}</td>
+              <td class="mono" style="text-align:right">${c.leads}</td>
+              <td style="text-align:right;color:${c.cpl>0?statusColor(c.cpl,META_CPL,false):"var(--muted)"}">${c.cpl>0?fBRL(c.cpl):"—"}</td>
+              <td class="mono" style="text-align:right">${c.leadsTotal}</td>
+              <td class="mono" style="text-align:right">${c.cplTotal>0?fBRL(c.cplTotal):"—"}</td>
+              <td class="mono" style="text-align:right">${c.cpc>0?fBRL(c.cpc):"—"}</td>
+              <td class="mono" style="text-align:right">${fPct(c.ctr)}</td>
+              <td class="mono" style="text-align:right">${fBRL(c.cpm)}</td>
+              <td class="mono" style="text-align:right">${c.vendas}</td>
+              <td class="mono" style="text-align:right">${c.roas>0?c.roas.toFixed(2).replace(".",",")+"x":"—"}</td>
+              <td class="mono" style="text-align:right">${c.leads>0?fPct(c.convFichaVenda):"—"}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="section-lbl" style="margin-bottom:0">Anúncios${S.selectedCamps.size>0?` — dentro de: ${[...S.selectedCamps].map(c=>c).join(", ")}`:" — consolidado (todas as campanhas)"}</div>
+      ${S.selectedAds.size>0?`<button onclick="clearAds()" style="font-size:10px;padding:3px 9px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:#f87171;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpar seleção (${S.selectedAds.size})</button>`:""}
+      <span style="font-size:10px;color:var(--hint)">Clique para selecionar e gerar o resumo</span>
+    </div>
+    <div style="position:relative;margin-bottom:10px">
+      <input oninput="setAdSearch(this.value)" value="${S.adSearch}" placeholder="Buscar anúncio…" style="width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box"/>
+    </div>
+    <div class="cc" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th style="width:36px"></th>
+          <th onclick="sortAnuncios('adName')" style="cursor:pointer">Anúncio</th>
+          <th>Campanha(s)</th>
+          ${thC("spend","Investimento",false)}
+          ${thC("leads","Fichas com preço",false)}
+          ${thC("cpl","Custo/ficha com preço",false)}
+          ${thC("leadsTotal","Fichas totais",false)}
+          ${thC("cplTotal","Custo/ficha total",false)}
+          ${thC("cpc","CPC",false)}
+          ${thC("ctr","CTR",false)}
+          ${thC("cpm","CPM",false)}
+          ${thC("vendas","Vendas",false)}
+          ${thC("roas","ROAS",false)}
+          ${thC("convFichaVenda","Conv. ficha→venda",false)}
+          <th></th>
+        </tr></thead>
+        <tbody>
+          ${sortedAds.length===0?`<tr><td colspan="15" style="text-align:center;color:var(--hint);padding:20px">Sem dados de anúncios no período (Base Meta ainda vazia)</td></tr>`:
+          sortedAds.map(a=>{
+            const sel=S.selectedAds.has(a.adName);
+            return `<tr onclick="toggleAd('${escName(a.adName)}')" style="cursor:pointer;background:${sel?"rgba(16,185,129,.1)":"transparent"}">
+              <td style="text-align:center">${chkBox(sel)}</td>
+              <td style="color:${sel?"#10b981":"var(--text)"};font-weight:${sel?600:400};max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.adName}">${a.adName}</td>
+              <td style="color:var(--hint);font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.campNames}">${a.campNames||"—"}</td>
+              <td class="mono" style="text-align:right">${fBRL(a.spend)}</td>
+              <td class="mono" style="text-align:right">${a.leads}</td>
+              <td style="text-align:right;color:${a.cpl>0?statusColor(a.cpl,META_CPL,false):"var(--muted)"}">${a.cpl>0?fBRL(a.cpl):"—"}</td>
+              <td class="mono" style="text-align:right">${a.leadsTotal}</td>
+              <td class="mono" style="text-align:right">${a.cplTotal>0?fBRL(a.cplTotal):"—"}</td>
+              <td class="mono" style="text-align:right">${a.cpc>0?fBRL(a.cpc):"—"}</td>
+              <td class="mono" style="text-align:right">${fPct(a.ctr)}</td>
+              <td class="mono" style="text-align:right">${fBRL(a.cpm)}</td>
+              <td class="mono" style="text-align:right">${a.vendas}</td>
+              <td class="mono" style="text-align:right">${a.roas>0?a.roas.toFixed(2).replace(".",",")+"x":"—"}</td>
+              <td class="mono" style="text-align:right">${a.leads>0?fPct(a.convFichaVenda):"—"}</td>
+              <td style="text-align:center" onclick="event.stopPropagation()">${a.igUrl?`<a href="${a.igUrl}" target="_blank" style="color:#93c5fd;text-decoration:none;font-size:11px">Ver ↗</a>`:"—"}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    ${selAds.length>0?`
+    <div style="margin-top:22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="section-lbl" style="margin-bottom:0">Resumo de Anúncios (${selAds.length})</div>
+        <button class="btn-copy-ads" onclick="copyAdResumo()" style="padding:6px 16px;background:rgba(59,130,246,.15);border:1px solid rgba(96,165,250,.35);color:#93c5fd;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif">📋 Copiar resumo</button>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px">
+        <pre style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);white-space:pre-wrap;line-height:1.9;margin:0;user-select:all">${adResumoText.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre>
+      </div>
+    </div>`:""}
+    <div class="foot">LDI · Carrinho · conectado ao Google Sheets</div>`;
+}
+
+// ── Render: Vendas ─────────────────────────────────────────────────────────
+// Vendas por dia = soma de vendasTraf+vendasOrg naquela data (data da ficha casada).
+// Conversão diária = vendas do dia / fichas do dia (tráfego+orgânico) — não identificadas
+// ficam de fora (não têm data).
+function getDailyConversao(start,end){
+  const allDates=new Set([...Object.keys(S.trafego),...Object.keys(S.organico)]);
+  return Array.from(allDates).sort().filter(d=>d>=start&&d<=end).map(date=>{
+    const fichasDay=(S.trafego[date]||0)+(S.organico[date]||0);
+    const vendasTraf=S.vendasTraf[date]||0;
+    const vendasOrg=S.vendasOrg[date]||0;
+    const vendasDay=vendasTraf+vendasOrg;
+    return {date,label:fDate(date),fichasDay,vendasDay,vendasTraf,vendasOrg,conv:fichasDay>0?(vendasDay/fichasDay)*100:0};
+  });
+}
+function periodVendas(start,end){
+  let traf=0,org=0;
+  for(const d in S.vendasTraf) if(d>=start&&d<=end) traf+=S.vendasTraf[d];
+  for(const d in S.vendasOrg) if(d>=start&&d<=end) org+=S.vendasOrg[d];
+  return {traf,org};
+}
+function renderVendas(){
+  const el=document.getElementById("page-vendas");if(!el)return;
+  const daily=getDailyConversao(S.startDate,S.endDate);
+  const {traf:totTraf,org:totOrg}=periodVendas(S.startDate,S.endDate);
+
+  // Métricas de conversão/faturamento/ROAS — sempre sobre o total (todo o período/histórico)
+  const totalFichasAllTime=Object.values(S.trafego).reduce((a,b)=>a+b,0)+Object.values(S.organico).reduce((a,b)=>a+b,0);
+  const convLista       = LISTA_LEADS_TOTAL>0 ? (S.vendasTotal/LISTA_LEADS_TOTAL)*100 : 0;
+  const convLeadsFichas = LISTA_LEADS_TOTAL>0 ? (totalFichasAllTime/LISTA_LEADS_TOTAL)*100 : 0;
+  const convFichas      = totalFichasAllTime>0 ? (S.vendasTotal/totalFichasAllTime)*100 : 0;
+  const faturamento     = S.vendasFaturamento;
+  const ticketMedio     = S.vendasTotal>0 ? faturamento/S.vendasTotal : 0;
+  const spendAllTime    = Object.values(S.meta).reduce((a,m)=>a+(m.spend||0),0);
+  const investimentoRoas= spendAllTime+INVESTIMENTO_ROAS_EXTRA;
+  const roas            = investimentoRoas>0 ? faturamento/investimentoRoas : 0;
+
+  el.innerHTML=`
+    <div class="hdr" style="margin-bottom:6px">
+      <div>
+        <div class="hdr-title">Vendas</div>
+        <div class="hdr-sub">atualizado em: ${S.updated||"—"}${daily.length>0?` · ${daily.length} dias no período`:""} · atribuição por e-mail/telefone da primeira ficha preenchida</div>
+      </div>
+    </div>
+    ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
+    <div class="g4" style="margin-bottom:13px">
+      ${kpiCard("Vendas (total)",S.vendasTotal.toLocaleString("pt-BR"),"todo o período","var(--text-strong)")}
+      ${kpiCard("Vendas tráfego",totTraf.toLocaleString("pt-BR"),"no período selecionado","var(--text-strong)")}
+      ${kpiCard("Vendas orgânico",totOrg.toLocaleString("pt-BR"),"no período selecionado","var(--text-strong)")}
+      ${kpiCard("Origem não identificada",S.vendasUnmatched.toLocaleString("pt-BR"),"sem ficha correspondente · todo o período","var(--muted)")}
+    </div>
+    <div class="g5" style="margin-bottom:16px">
+      ${kpiCard("Conversão lista em vendas",fPct(convLista),`${S.vendasTotal} / ${LISTA_LEADS_TOTAL.toLocaleString("pt-BR")} leads`,"var(--text-strong)")}
+      ${kpiCard("Conversão leads em fichas",fPct(convLeadsFichas),`${totalFichasAllTime.toLocaleString("pt-BR")} / ${LISTA_LEADS_TOTAL.toLocaleString("pt-BR")} leads`,"var(--text-strong)")}
+      ${kpiCard("Conversão fichas em vendas",fPct(convFichas),`${S.vendasTotal} / ${totalFichasAllTime.toLocaleString("pt-BR")} fichas`,"var(--text-strong)")}
+      ${kpiCard("Faturamento",fBRL(faturamento),`ticket médio: ${fBRL(ticketMedio)}`,"var(--text-strong)")}
+      ${kpiCard("ROAS",roas.toFixed(2).replace(".",",")+"x",`${fBRL(faturamento)} / ${fBRL(investimentoRoas)}`,"var(--text-strong)")}
+    </div>
+    <div class="cc" style="position:relative;margin-bottom:12px">
+      <div class="ch">
+        <span class="ct">Quantidade de vendas — Tráfego (por dia)</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_TRAF}"></span>Vendas/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-vendas-traf"></canvas><div class="tip" id="t-vendas-traf"></div></div>
+    </div>
+    <div class="cc" style="position:relative;margin-bottom:12px">
+      <div class="ch">
+        <span class="ct">Quantidade de vendas — Orgânico (por dia)</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_ORG}"></span>Vendas/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-vendas-org"></canvas><div class="tip" id="t-vendas-org"></div></div>
+    </div>
+    <div class="cc" style="position:relative">
+      <div class="ch">
+        <span class="ct">Conversão de fichas em vendas por dia</span>
+        <div class="lg"><span class="li"><span class="ld" style="background:${CHART_INV}"></span>Conversão/dia</span></div>
+      </div>
+      <div style="position:relative"><canvas id="c-conv"></canvas><div class="tip" id="t-conv"></div></div>
+    </div>
+    ${daily.length===0?`<div class="err" style="margin-top:12px">Nenhum dado no período selecionado.</div>`:""}
+    <div class="foot">LDI · Carrinho · conectado ao Google Sheets</div>`;
+  requestAnimationFrame(()=>{
+    const box1=document.getElementById("c-conv")?.parentElement;
+    if(box1)drawBarPct("c-conv",daily,"conv",CHART_INV,box1.clientWidth,220);
+    setupTip("c-conv","t-conv",daily,[
+      {name:"Conversão",color:CHART_INV,key:"conv",fmt:v=>v.toFixed(2).replace(".",",")+"%"},
+      {name:"Vendas",color:CHART_TRAF,key:"vendasDay",fmt:v=>String(v)},
+      {name:"Fichas",color:CHART_ORG,key:"fichasDay",fmt:v=>String(v)}],44,12);
+    const box2=document.getElementById("c-vendas-traf")?.parentElement;
+    if(box2)drawBarSingle("c-vendas-traf",daily,"vendasTraf",CHART_TRAF,box2.clientWidth,200);
+    const box3=document.getElementById("c-vendas-org")?.parentElement;
+    if(box3)drawBarSingle("c-vendas-org",daily,"vendasOrg",CHART_ORG,box3.clientWidth,200);
+    setupTip("c-vendas-traf","t-vendas-traf",daily,[{name:"Vendas tráfego",color:CHART_TRAF,key:"vendasTraf",fmt:v=>String(v)}],40,12);
+    setupTip("c-vendas-org","t-vendas-org",daily,[{name:"Vendas orgânico",color:CHART_ORG,key:"vendasOrg",fmt:v=>String(v)}],40,12);
+  });
+}
+
+// ── Render: Resumo diário ──────────────────────────────────────────────────
+function renderResumo(){
+  const el=document.getElementById("page-resumo");if(!el)return;
+  const _fid=document.activeElement?.id; // capturar antes do innerHTML destruir o foco
+  const today=todayISO(), yest=yesterdayISO();
+  const per=getCurrentPeriod();
+
+  const ontem=periodTotals(yest,yest);
+  const hojeRaw=periodTotals(today,today); // valor "cru" vindo da Base Meta, antes de qualquer override manual
+  const isManual=S.manualSpendHoje!==null;
+
+  // "Hoje": se houver override manual, usa o valor digitado no lugar do investimento da Base Meta
+  // (CPC/CPM ficam estáticos, com base no investimento bruto da Base Meta — só Custo/ficha recalcula)
+  const hoje=isManual
+    ? {...hojeRaw, spend:S.manualSpendHoje,
+        cpl:hojeRaw.trafComPreco>0?S.manualSpendHoje/hojeRaw.trafComPreco:0,
+        cplTotal:hojeRaw.traf>0?S.manualSpendHoje/hojeRaw.traf:0}
+    : hojeRaw;
+
+  // "Total - Consolidado": soma o período selecionado no cabeçalho (mesmo filtro usado nas
+  // demais abas — Principal, Fichas, Campanhas/Anúncios), não a planilha inteira. Antes somava
+  // tudo (periodTotals(null,null)), o que incluía qualquer dado fora do período selecionado e
+  // fazia o total daqui divergir do que aparecia na aba Principal para o mesmo período.
+  // Troca a fatia de "hoje" pelo valor manual quando houver override (CPC/CPM do consolidado
+  // também ficam estáticos, com base no investimento bruto).
+  let tot=periodTotals(S.startDate,S.endDate);
+  if(isManual){
+    const adjSpend=tot.spend-hojeRaw.spend+S.manualSpendHoje;
+    tot={...tot, spend:adjSpend,
+      cpl:tot.trafComPreco>0?adjSpend/tot.trafComPreco:0,
+      cplTotal:tot.traf>0?adjSpend/tot.traf:0};
+  }
+
+  // Farol do Custo/ficha usa sempre "fichas com preço" (é a métrica que tem meta definida —
+  // constante META_CPL). "Fichas totais" (com+sem preço) não tem farol/meta, é só informativo.
+  function cplInfo(m){
+    if(!m.trafComPreco) return {txt:"--", emoji:"🔴"};
+    const ratio=META_CPL/m.cpl;
+    let emoji="🔴";
+    if(ratio>=1)emoji="🟢";else if(ratio>=0.85)emoji="🟡";
+    return {txt:fBRL(m.cpl),emoji};
+  }
+  // Farol das metas de mídia: 🟢 dentro da meta / 🟡 até 10% fora / 🔴 mais de 10% fora
+  // metaObj===null → métrica ainda sem meta definida (ldi_jul26): sem farol/badge.
+  function metaEmoji(val,metaObj){
+    if(!metaObj) return "";
+    if(!val) return "🔴";
+    const c=statusColor(val,metaObj.val,metaObj.higher);
+    if(c==="#34d399")return "🟢";
+    if(c==="#fbbf24")return "🟡";
+    return "🔴";
+  }
+  function metaStr(metaObj,isPct){
+    if(!metaObj) return "";
+    return isPct?`meta ${metaObj.val}%`:`meta ${fBRL(metaObj.val)}`;
+  }
+
+  function row(lbl,val,metaStr,emoji){
+    return `<div style="display:grid;grid-template-columns:180px 1fr auto;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center">
+      <span style="color:var(--muted);font-size:12px">${lbl}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-strong)">${val}</span>
+      <span style="font-size:14px;min-width:90px;text-align:right">${emoji||""}<span style="font-size:10px;color:var(--hint);margin-left:4px">${metaStr||""}</span></span>
+    </div>`;
+  }
+  function investRowHoje(){
+    return `<div style="display:grid;grid-template-columns:180px 1fr auto;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center">
+      <span style="color:var(--muted);font-size:12px">Investimento</span>
+      <input id="manual-spend-input"
+        value="${isManual?(hoje.spend||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}"
+        placeholder="${fBRL(hojeRaw.spend)}"
+        inputmode="decimal"
+        oninput="setManualSpendHoje(this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()"
+        style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${isManual?'#fbbf24':'var(--text-strong)'};background:transparent;border:none;border-bottom:1px solid ${isManual?'rgba(251,191,36,.4)':'rgba(255,255,255,.15)'};outline:none;padding:2px 0;width:100%"/>
+      <span style="font-size:11px;min-width:90px;text-align:right">
+        ${isManual?`<button onclick="clearManualSpendHoje()" style="font-size:10px;padding:3px 9px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif">↩ Restaurar</button>`:""}
+      </span>
+    </div>`;
+  }
+  function block(title,m,isHoje,dateLbl){
+    const c=cplInfo(m);
+    return `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;font-weight:700;color:var(--text-strong)">${title}</span>
+        ${dateLbl?`<span style="font-size:11px;color:var(--hint);font-family:'JetBrains Mono',monospace">${dateLbl}</span>`:""}
+      </div>
+      ${isHoje?investRowHoje():row("Investimento",fBRL(m.spend),"","")}
+      ${row("Fichas com preço",m.trafComPreco,"","")}
+      ${row("Custo/ ficha com preço",c.txt,`meta ${fBRL(META_CPL)}`,c.emoji)}
+      <div style="height:6px"></div>
+      ${row("Fichas totais",m.traf,"","")}
+      ${row("Custo/ficha total",m.traf>0?fBRL(m.cplTotal):"—","","")}
+      <div style="height:10px"></div>
+      ${row("CPC",fBRL(m.cpc),metaStr(METAS_RESUMO.cpc,false),metaEmoji(m.cpc,METAS_RESUMO.cpc))}
+      ${row("CTR",fPct(m.ctr),metaStr(METAS_RESUMO.ctr,true),metaEmoji(m.ctr,METAS_RESUMO.ctr))}
+      ${row("CPM",fBRL(m.cpm),metaStr(METAS_RESUMO.cpm,false),metaEmoji(m.cpm,METAS_RESUMO.cpm))}
+      ${row("Tx conversão formulário",fPct(m.txForm),metaStr(METAS_RESUMO.txForm,true),metaEmoji(m.txForm,METAS_RESUMO.txForm))}
+    </div>`;
+  }
+
+  const ct=cplInfo(tot);
+  const co=cplInfo(ontem);
+  const ch_=cplInfo(hoje);
+  function textBlock(label,m,dateLbl,c){
+    return `${label}${dateLbl?`\t${dateLbl}`:""}
+
+Investimento:\t${fBRL(m.spend)}
+Fichas com preço:\t${m.trafComPreco}
+Custo/ ficha com preço:\t${c.txt}\t${c.emoji} (meta: ${fBRL(META_CPL)})
+
+Fichas totais:\t${m.traf}
+Custo/ficha total:\t${m.traf>0?fBRL(m.cplTotal):"—"}
+
+CPC:\t${fBRL(m.cpc)}
+CTR:\t${fPct(m.ctr)}
+CPM:\t${fBRL(m.cpm)}
+Tx conversão formulário:\t${fPct(m.txForm)}`;
+  }
+  const resumoText=
+`ldi_jul26 | Carrinho
+
+${textBlock("Total - Consolidado",tot,"",ct)}
+---------------------
+${textBlock("Ontem",ontem,fDateBR(yest),co)}
+---------------------
+${textBlock("Hoje",hoje,fDateBR(today),ch_)}`;
+
+  el.innerHTML=`
+    <div class="hdr" style="margin-bottom:16px">
+      <div>
+        <div class="hdr-title">Resumo diário</div>
+        <div class="hdr-sub">ldi_jul26 · Carrinho · ontem: ${fDateBR(yest)} · hoje: ${fDateBR(today)} · considera apenas fichas de tráfego · "com preço" = respondeu a pergunta de valor/pagamento</div>
+      </div>
+      <button onclick="copyResumo()" class="btn-copy-resumo" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:rgba(59,130,246,.18);border:1px solid rgba(96,165,250,.35);color:#93c5fd;border-radius:9px;cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif">
+        📋 Copiar resumo
+      </button>
+    </div>
+    ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
+    <div style="display:grid;grid-template-columns:1fr 420px;gap:20px;align-items:start">
+      <div>
+        ${block("📶 Total - Consolidado",tot,false,per.s&&per.e?`${fDateBR(per.s)} → ${fDateBR(per.e)}`:"")}
+        ${block("⬅️ Ontem",ontem,false,fDateBR(yest))}
+        ${block("⬇️ Hoje",hoje,true,fDateBR(today))}
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;position:sticky;top:70px">
+        <pre id="resumo-preview" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);white-space:pre-wrap;line-height:1.8;margin:0;user-select:all">${resumoText.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre>
+      </div>
+    </div>
+    <div class="foot">LDI · Carrinho · conectado ao Google Sheets</div>`;
+  el._resumoText=resumoText;
+  if(_fid==="manual-spend-input"){
+    requestAnimationFrame(()=>{
+      const _s=document.getElementById("manual-spend-input");
+      if(_s){_s.focus();const _l=_s.value.length;_s.setSelectionRange(_l,_l);}
+    });
+  }
+}
+function setManualSpendHoje(v){
+  const n=parseFloat(String(v).replace(/[R$\s.]/g,"").replace(",","."));
+  S.manualSpendHoje=(isNaN(n)||n<=0)?null:n;
+  renderResumo();
+}
+function clearManualSpendHoje(){S.manualSpendHoje=null;renderResumo();}
+function copyResumo(){
+  const el=document.getElementById("page-resumo");
+  const text=el?._resumoText||"";if(!text)return;
+  navigator.clipboard.writeText(text).then(()=>{
+    document.querySelectorAll(".btn-copy-resumo").forEach(b=>{
+      const orig=b.innerHTML;b.innerHTML="✓ Copiado!";b.style.color="#4ade80";
+      setTimeout(()=>{b.innerHTML=orig;b.style.color="";},1800);
+    });
+  }).catch(()=>alert("Não foi possível copiar. Selecione o texto manualmente."));
+}
+
+// ── Main render ───────────────────────────────────────────────────────────
+function render(){
+  const loadingEl=document.getElementById("loading");
+  if(loadingEl)loadingEl.style.display=S.loading?"flex":"none";
+  document.querySelectorAll(".page").forEach(el=>{el.style.display=(el.classList.contains("active")&&!S.loading)?"block":"none";});
+  if(S.loading)return;
+  renderHeader();
+  if(S.currentPage==="principal")renderPrincipal();
+  else if(S.currentPage==="fichas")renderFichas();
+  else if(S.currentPage==="anuncios")renderAnuncios();
+  else if(S.currentPage==="vendas")renderVendas();
+  else if(S.currentPage==="resumo")renderResumo();
+}
+
+loadData();
+</script>
+</body>
+</html>
