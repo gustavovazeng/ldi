@@ -849,15 +849,7 @@ function getAdRows(start,end,selectedCamps){
 function passQual(tipo,qual){ return !qual||qual==="todas"||tipo===qual; }
 // Tabela Origem: de-para de tráfego pago + nomes amigáveis pro restante.
 const ORIGEM_MAP = {
-  "wp":"Whatsapp",
-  "wp-antigos":"Whatsapp",
-  "wp-suporte":"Whatsapp",
-  "youtube":"Youtube",
-  "qrcode":"Youtube",
-  "api-pvd":"API",
-  "instagram":"Instagram Orgânico",
-  "em,ActiveCampaign":"Email",
-  "em":"Email",
+  "ig":"Instagram Orgânico",
   "(não informado)":"Sem UTM",
   "xxxxx":"Sem UTM",
 };
@@ -865,12 +857,22 @@ function normOrigem(o){
   if(o&&o.includes("FBAds"))return "Tráfego";
   return ORIGEM_MAP[o]||o;
 }
-// Tabela Canal: nome bruto da UTM source (sem tradução), exceto:
-//  • tráfego pago (FBAds) → agrupado em "Tráfego" (igual à tabela de Origem)
-//  • "instagram" → detalhado por medium, ex: "instagram-live", "instagram-bio"
+// Tabela Canal: nome amigável do utm_medium — é ele que diferencia o canal
+// dentro de uma origem no ldi_jul26 (ex: origem "LDI" com canal "wpp" × "api").
+// Tráfego pago (FBAds) continua agrupado em "Tráfego" (o detalhe de
+// campanha/anúncio fica na aba Campanhas/Anúncios). Sem utm_medium, cai na
+// própria origem.
+const CANAL_MAP = {
+  "wpp":"WhatsApp",
+  "api":"API",
+  "social":"Social",
+  "email":"Email",
+  "xxxxx":"Sem UTM",
+  "(não informado)":"Sem UTM",
+};
 function canalKey(origem,canal){
   if(origem&&origem.includes("FBAds"))return "Tráfego";
-  if(origem==="instagram")return `${origem}-${canal||"(não informado)"}`;
+  if(canal&&canal!=="(não informado)")return CANAL_MAP[canal]||canal;
   return origem||"(não informado)";
 }
 // fichas: S.fichaOrigem (totais) ou S.fichaOrigemUnica (deduplicadas) — conforme S.fichasMode.
