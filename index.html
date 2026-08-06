@@ -867,13 +867,17 @@ const CANAL_MAP = {
   "api":"API",
   "social":"Social",
   "email":"Email",
-  "xxxxx":"Sem UTM",
-  "(não informado)":"Sem UTM",
 };
+// Valores que não carregam informação real de rastreio — tratados como "Sem UTM"
+// tanto vindo vazio (planilha manda "(não informado)") quanto vindo como "xxxxx"
+// (link de teste). As duas coisas significam a mesma coisa: não dá pra saber a
+// origem/canal dessa ficha.
+const SEM_UTM_VALUES = new Set(["(não informado)","xxxxx",""]);
 function canalKey(origem,canal){
   if(origem&&origem.includes("FBAds"))return "Tráfego";
-  if(canal&&canal!=="(não informado)")return CANAL_MAP[canal]||canal;
-  return origem||"(não informado)";
+  if(canal&&!SEM_UTM_VALUES.has(canal))return CANAL_MAP[canal]||canal;
+  if(origem&&!SEM_UTM_VALUES.has(origem))return normOrigem(origem);
+  return "Sem UTM";
 }
 // fichas: S.fichaOrigem (totais) ou S.fichaOrigemUnica (deduplicadas) — conforme S.fichasMode.
 // vendas: lista de vendas já filtrada pelo mesmo critério "com preço/sem preço/total" da
