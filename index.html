@@ -208,6 +208,15 @@ input[type=date]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer;fi
 // ── Meta de custo por ficha ────────────────────────────────────────────────
 const META_CPL = 40; // R$ 40 por ficha (tráfego)
 
+// A pergunta de forma de pagamento vai sair do formulário a partir de
+// 07/08/2026 — dali pra frente não dá mais pra calcular "custo/ficha com
+// preço" de verdade (ninguém mais responde essa pergunta). Por pedido, esse
+// valor fica fixado manualmente em vez de recalculado — usado no Resumo
+// diário e na aba Principal. A aba Campanhas/Anúncios continua calculando
+// por conta própria (é onde dá pra ver o efeito real do corte por campanha).
+const CUTOFF_DATE_ISO = "2026-08-07";
+const CPL_FIXO = 47.73; // Custo/ficha com preço (tráfego) — fixo, qualquer período
+
 // Metas de mídia usadas no farol do Resumo diário (🟢 dentro / 🟡 até 10% fora / 🔴 mais de 10% fora)
 // CPC / CTR / CPM / Tx. formulário ainda sem meta definida para o ldi_jul26 — ficam sem farol.
 const METAS_RESUMO = {
@@ -1099,6 +1108,7 @@ function drawDualInvCpl(id,data,cssW,cssH){
   ctx.setLineDash([]);
   ctx.fillStyle=CHART_CPL;ctx.font="9px 'Inter',sans-serif";ctx.textAlign="left";
   ctx.fillText("Meta R$"+META_CPL,P.l+cW+4,mY-3);
+  drawCutoffMarker(ctx,xP,data,P,cH);
   drawLineArea(ctx,xP,yPL,lVals,CHART_INV,true);
   drawLineArea(ctx,xP,yPR,rVals,CHART_CPL,false);
   drawLineArea(ctx,xP,yPR,rValsTotal,CHART_TRAF,false);
@@ -1107,6 +1117,28 @@ function drawDualInvCpl(id,data,cssW,cssH){
   data.forEach((d,i)=>{if(i%step===0)ctx.fillText(d.label,xP(i),P.t+cH+18);});
 }
 
+// Marcador do corte da forma de pagamento: 07/08/2026, quando a pergunta sai
+// do formulário. Linha tracejada vertical + rótulos "Com preço" / "Sem preço"
+// em todo gráfico cujo eixo X cobre essa data. Se a data não estiver no
+// período exibido, não desenha nada.
+function drawCutoffMarker(ctx,xP,data,P,cH){
+  const idx=data.findIndex(d=>d.date===CUTOFF_DATE_ISO);
+  if(idx<0)return;
+  const x=xP(idx);
+  ctx.save();
+  ctx.setLineDash([4,3]);
+  ctx.strokeStyle="#f87171";
+  ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(x,P.t);ctx.lineTo(x,P.t+cH);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font="8px 'DM Sans',sans-serif";
+  ctx.fillStyle="#f87171";
+  ctx.textAlign="right";
+  ctx.fillText("Com preço",x-5,P.t+9);
+  ctx.textAlign="left";
+  ctx.fillText("Sem preço",x+5,P.t+9);
+  ctx.restore();
+}
 function drawBars(ctx,xP,yP,yZero,vals,color,barW){
   vals.forEach((v,i)=>{
     const x=xP(i)-barW/2, y=Math.min(yP(v),yZero), h=Math.abs(yP(v)-yZero);
@@ -1133,6 +1165,7 @@ function drawBarSingle(id,data,key,color,cssW,cssH){
     ctx.fillStyle=TICK_C;ctx.font="9px 'DM Mono',monospace";ctx.textAlign="right";
     ctx.fillText(Math.round(maxV-(i/4)*maxV),P.l-4,y+3);
   }
+  drawCutoffMarker(ctx,xP,data,P,cH);
   drawBars(ctx,xP,yP,P.t+cH,vals,color,barW);
   const step=n>60?7:n>30?3:n>14?2:1;
   ctx.textAlign="center";
@@ -1164,6 +1197,7 @@ function drawBarPct(id,data,key,color,cssW,cssH){
     ctx.fillStyle=TICK_C;ctx.font="9px 'DM Mono',monospace";ctx.textAlign="right";
     ctx.fillText((maxV-(i/4)*maxV).toFixed(1)+"%",P.l-4,y+3);
   }
+  drawCutoffMarker(ctx,xP,data,P,cH);
   drawBars(ctx,xP,yP,P.t+cH,vals,color,barW);
   const step=n>60?7:n>30?3:n>14?2:1;
   ctx.textAlign="center";
@@ -1221,8 +1255,11 @@ function renderPrincipal(){
   const daily=getDaily(S.startDate,S.endDate);
   const tot=getTotals(daily);
   const cplTotal=tot.trafficLeads>0?tot.spend/tot.trafficLeads:0;
-  const cpl=tot.trafficLeadsComPreco>0?tot.spend/tot.trafficLeadsComPreco:0;
-  const cplC=cpl>0?statusColor(cpl,META_CPL,false):"var(--text-strong)";
+  // Custo/ficha com preço fixo (ver CPL_FIXO) — a pergunta de forma de
+  // pagamento sai do formulário em 07/08/2026, então esse número não é mais
+  // recalculável de verdade a partir dessa data.
+  const cpl=CPL_FIXO;
+  const cplC=statusColor(cpl,META_CPL,false);
   el.innerHTML=`
     <div class="hdr" style="margin-bottom:6px">
       <div>
@@ -1234,7 +1271,7 @@ function renderPrincipal(){
     ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
     <div class="g3" style="margin-bottom:13px">
       ${kpiCard("Investimento",fBRL(tot.spend),"","var(--text-strong)")}
-      ${kpiCard("Custo/ficha com preço",cpl>0?fBRL(cpl):"—",`meta ${fBRL(META_CPL)}`,cplC,false,cpl>0?cpl:null,cpl>0?META_CPL:null,false)}
+      ${kpiCard("Custo/ficha com preço",fBRL(cpl),`meta ${fBRL(META_CPL)}`,cplC,false,cpl,META_CPL,false)}
       ${kpiCard("Custo/ficha total",tot.trafficLeads>0?fBRL(cplTotal):"—","","var(--text-strong)")}
     </div>
     <div class="g3" style="margin-bottom:13px">
@@ -1837,12 +1874,14 @@ function renderResumo(){
 
   // Farol do Custo/ficha usa sempre "fichas com preço" (é a métrica que tem meta definida —
   // constante META_CPL). "Fichas totais" (com+sem preço) não tem farol/meta, é só informativo.
+  // Custo/ficha com preço fixo (ver CPL_FIXO) — a pergunta de forma de pagamento
+  // sai do formulário em 07/08/2026, então esse número não é mais recalculável
+  // de verdade a partir dessa data. Vale pros três blocos (Consolidado/Ontem/Hoje).
   function cplInfo(m){
-    if(!m.trafComPreco) return {txt:"--", emoji:"🔴"};
-    const ratio=META_CPL/m.cpl;
+    const ratio=META_CPL/CPL_FIXO;
     let emoji="🔴";
     if(ratio>=1)emoji="🟢";else if(ratio>=0.85)emoji="🟡";
-    return {txt:fBRL(m.cpl),emoji};
+    return {txt:fBRL(CPL_FIXO),emoji};
   }
   // Farol das metas de mídia: 🟢 dentro da meta / 🟡 até 10% fora / 🔴 mais de 10% fora
   // metaObj===null → métrica ainda sem meta definida (ldi_jul26): sem farol/badge.
