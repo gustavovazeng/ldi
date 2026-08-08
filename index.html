@@ -206,7 +206,8 @@ input[type=date]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer;fi
    ════════════════════════════════════════════════════════════════════════ */
 
 // ── Meta de custo por ficha ────────────────────────────────────────────────
-const META_CPL = 40; // R$ 40 por ficha (tráfego)
+const META_CPL = 40; // R$ 40 por ficha com preço (tráfego)
+const META_CPL_TOTAL = 15; // R$ 15 por ficha total — com+sem preço (tráfego)
 
 // A pergunta de forma de pagamento vai sair do formulário a partir de
 // 07/08/2026 — dali pra frente não dá mais pra calcular "custo/ficha com
@@ -1089,7 +1090,7 @@ function drawDualInvCpl(id,data,cssW,cssH){
   const rVals=data.map(d=>d.cpl||0);
   const rValsTotal=data.map(d=>d.cplTotal||0);
   const lMax=Math.max(...lVals,0.01)*1.15;
-  const rMax=Math.max(...rVals,...rValsTotal,META_CPL,0.01)*1.4;
+  const rMax=Math.max(...rVals,...rValsTotal,META_CPL,META_CPL_TOTAL,0.01)*1.4;
   const xP=i=>P.l+(data.length>1?i/(data.length-1):0.5)*cW;
   const yPL=v=>P.t+cH-((v)/(lMax))*cH;
   const yPR=v=>P.t+cH-((v)/(rMax))*cH;
@@ -1108,6 +1109,12 @@ function drawDualInvCpl(id,data,cssW,cssH){
   ctx.setLineDash([]);
   ctx.fillStyle=CHART_CPL;ctx.font="9px 'Inter',sans-serif";ctx.textAlign="left";
   ctx.fillText("Meta R$"+META_CPL,P.l+cW+4,mY-3);
+  const mYT=yPR(META_CPL_TOTAL);
+  ctx.strokeStyle=CHART_TRAF+"55";ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(P.l,mYT);ctx.lineTo(P.l+cW,mYT);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=CHART_TRAF;ctx.font="9px 'Inter',sans-serif";ctx.textAlign="left";
+  ctx.fillText("Meta total R$"+META_CPL_TOTAL,P.l+cW+4,mYT-3);
   drawCutoffMarker(ctx,xP,data,P,cH);
   drawLineArea(ctx,xP,yPL,lVals,CHART_INV,true);
   drawLineArea(ctx,xP,yPR,rVals,CHART_CPL,false);
@@ -1260,6 +1267,7 @@ function renderPrincipal(){
   // recalculável de verdade a partir dessa data.
   const cpl=CPL_FIXO;
   const cplC=statusColor(cpl,META_CPL,false);
+  const cplTotalC=tot.trafficLeads>0?statusColor(cplTotal,META_CPL_TOTAL,false):"var(--text-strong)";
   el.innerHTML=`
     <div class="hdr" style="margin-bottom:6px">
       <div>
@@ -1272,7 +1280,7 @@ function renderPrincipal(){
     <div class="g3" style="margin-bottom:13px">
       ${kpiCard("Investimento",fBRL(tot.spend),"","var(--text-strong)")}
       ${kpiCard("Custo/ficha com preço",fBRL(cpl),`meta ${fBRL(META_CPL)}`,cplC,false,cpl,META_CPL,false)}
-      ${kpiCard("Custo/ficha total",tot.trafficLeads>0?fBRL(cplTotal):"—","","var(--text-strong)")}
+      ${kpiCard("Custo/ficha total",tot.trafficLeads>0?fBRL(cplTotal):"—",`meta ${fBRL(META_CPL_TOTAL)}`,cplTotalC,false,tot.trafficLeads>0?cplTotal:null,tot.trafficLeads>0?META_CPL_TOTAL:null,false)}
     </div>
     <div class="g3" style="margin-bottom:13px">
       ${kpiCard("Fichas tráfego (com preço)",tot.trafficLeadsComPreco.toLocaleString("pt-BR"),"","var(--text-strong)")}
@@ -1291,7 +1299,8 @@ function renderPrincipal(){
           <span class="li"><span class="ll" style="background:${CHART_INV}"></span>Invest. (esq.)</span>
           <span class="li"><span class="ll" style="background:${CHART_CPL}"></span>Custo/ficha com preço (dir.)</span>
           <span class="li"><span class="ll" style="background:${CHART_TRAF}"></span>Custo/ficha total (dir.)</span>
-          <span class="li"><span class="ll" style="background:${CHART_CPL};opacity:.4;border-top:1px dashed ${CHART_CPL}"></span>Meta R$${META_CPL}</span>
+          <span class="li"><span class="ll" style="background:${CHART_CPL};opacity:.4;border-top:1px dashed ${CHART_CPL}"></span>Meta com preço R$${META_CPL}</span>
+          <span class="li"><span class="ll" style="background:${CHART_TRAF};opacity:.4;border-top:1px dashed ${CHART_TRAF}"></span>Meta total R$${META_CPL_TOTAL}</span>
         </div>
       </div>
       <div style="position:relative"><canvas id="c-dual"></canvas><div class="tip" id="t-dual"></div></div>
@@ -1661,7 +1670,7 @@ function renderAnuncios(){
               <td class="mono" style="text-align:right">${c.leads}</td>
               <td style="text-align:right;color:${c.cpl>0?statusColor(c.cpl,META_CPL,false):"var(--muted)"}">${c.cpl>0?fBRL(c.cpl):"—"}</td>
               <td class="mono" style="text-align:right">${c.leadsTotal}</td>
-              <td class="mono" style="text-align:right">${c.cplTotal>0?fBRL(c.cplTotal):"—"}</td>
+              <td style="text-align:right;color:${c.cplTotal>0?statusColor(c.cplTotal,META_CPL_TOTAL,false):"var(--muted)"}">${c.cplTotal>0?fBRL(c.cplTotal):"—"}</td>
               <td class="mono" style="text-align:right">${c.cpc>0?fBRL(c.cpc):"—"}</td>
               <td class="mono" style="text-align:right">${fPct(c.ctr)}</td>
               <td class="mono" style="text-align:right">${fBRL(c.cpm)}</td>
@@ -1715,7 +1724,7 @@ function renderAnuncios(){
               <td class="mono" style="text-align:right">${a.leads}</td>
               <td style="text-align:right;color:${a.cpl>0?statusColor(a.cpl,META_CPL,false):"var(--muted)"}">${a.cpl>0?fBRL(a.cpl):"—"}</td>
               <td class="mono" style="text-align:right">${a.leadsTotal}</td>
-              <td class="mono" style="text-align:right">${a.cplTotal>0?fBRL(a.cplTotal):"—"}</td>
+              <td style="text-align:right;color:${a.cplTotal>0?statusColor(a.cplTotal,META_CPL_TOTAL,false):"var(--muted)"}">${a.cplTotal>0?fBRL(a.cplTotal):"—"}</td>
               <td class="mono" style="text-align:right">${a.cpc>0?fBRL(a.cpc):"—"}</td>
               <td class="mono" style="text-align:right">${fPct(a.ctr)}</td>
               <td class="mono" style="text-align:right">${fBRL(a.cpm)}</td>
@@ -1883,6 +1892,15 @@ function renderResumo(){
     if(ratio>=1)emoji="🟢";else if(ratio>=0.85)emoji="🟡";
     return {txt:fBRL(CPL_FIXO),emoji};
   }
+  // Farol do Custo/ficha total (com+sem preço) — meta própria (META_CPL_TOTAL),
+  // continua recalculando normal (não é fixo como o "com preço").
+  function cplTotalInfo(m){
+    if(!m.traf) return {txt:"—", emoji:""};
+    const ratio=META_CPL_TOTAL/m.cplTotal;
+    let emoji="🔴";
+    if(ratio>=1)emoji="🟢";else if(ratio>=0.85)emoji="🟡";
+    return {txt:fBRL(m.cplTotal),emoji};
+  }
   // Farol das metas de mídia: 🟢 dentro da meta / 🟡 até 10% fora / 🔴 mais de 10% fora
   // metaObj===null → métrica ainda sem meta definida (ldi_jul26): sem farol/badge.
   function metaEmoji(val,metaObj){
@@ -1922,6 +1940,7 @@ function renderResumo(){
   }
   function block(title,m,isHoje,dateLbl){
     const c=cplInfo(m);
+    const ct_=cplTotalInfo(m);
     return `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">
@@ -1933,7 +1952,7 @@ function renderResumo(){
       ${row("Custo/ ficha com preço",c.txt,`meta ${fBRL(META_CPL)}`,c.emoji)}
       <div style="height:6px"></div>
       ${row("Fichas totais",m.traf,"","")}
-      ${row("Custo/ficha total",m.traf>0?fBRL(m.cplTotal):"—","","")}
+      ${row("Custo/ficha total",ct_.txt,`meta ${fBRL(META_CPL_TOTAL)}`,ct_.emoji)}
       <div style="height:10px"></div>
       ${row("CPC",fBRL(m.cpc),metaStr(METAS_RESUMO.cpc,false),metaEmoji(m.cpc,METAS_RESUMO.cpc))}
       ${row("CTR",fPct(m.ctr),metaStr(METAS_RESUMO.ctr,true),metaEmoji(m.ctr,METAS_RESUMO.ctr))}
@@ -1945,7 +1964,10 @@ function renderResumo(){
   const ct=cplInfo(tot);
   const co=cplInfo(ontem);
   const ch_=cplInfo(hoje);
-  function textBlock(label,m,dateLbl,c){
+  const ctTotal=cplTotalInfo(tot);
+  const coTotal=cplTotalInfo(ontem);
+  const chTotal=cplTotalInfo(hoje);
+  function textBlock(label,m,dateLbl,c,cTot){
     return `${label}${dateLbl?`\t${dateLbl}`:""}
 
 Investimento:\t${fBRL(m.spend)}
@@ -1953,7 +1975,7 @@ Fichas com preço:\t${m.trafComPreco}
 Custo/ ficha com preço:\t${c.txt}\t${c.emoji} (meta: ${fBRL(META_CPL)})
 
 Fichas totais:\t${m.traf}
-Custo/ficha total:\t${m.traf>0?fBRL(m.cplTotal):"—"}
+Custo/ficha total:\t${cTot.txt}\t${cTot.emoji} (meta: ${fBRL(META_CPL_TOTAL)})
 
 CPC:\t${fBRL(m.cpc)}
 CTR:\t${fPct(m.ctr)}
@@ -1963,11 +1985,11 @@ Tx conversão formulário:\t${fPct(m.txForm)}`;
   const resumoText=
 `ldi_jul26 | Carrinho
 
-${textBlock("Total - Consolidado",tot,"",ct)}
+${textBlock("Total - Consolidado",tot,"",ct,ctTotal)}
 ---------------------
-${textBlock("Ontem",ontem,fDateBR(yest),co)}
+${textBlock("Ontem",ontem,fDateBR(yest),co,coTotal)}
 ---------------------
-${textBlock("Hoje",hoje,fDateBR(today),ch_)}`;
+${textBlock("Hoje",hoje,fDateBR(today),ch_,chTotal)}`;
 
   el.innerHTML=`
     <div class="hdr" style="margin-bottom:16px">
