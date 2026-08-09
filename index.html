@@ -1881,16 +1881,17 @@ function renderResumo(){
       cplTotal:tot.traf>0?adjSpend/tot.traf:0};
   }
 
-  // Farol do Custo/ficha usa sempre "fichas com preço" (é a métrica que tem meta definida —
-  // constante META_CPL). "Fichas totais" (com+sem preço) não tem farol/meta, é só informativo.
-  // Custo/ficha com preço fixo (ver CPL_FIXO) — a pergunta de forma de pagamento
-  // sai do formulário em 07/08/2026, então esse número não é mais recalculável
-  // de verdade a partir dessa data. Vale pros três blocos (Consolidado/Ontem/Hoje).
+  // Farol do Custo/ficha com preço — meta META_CPL. Aqui no Resumo diário NÃO
+  // usa o valor fixo (CPL_FIXO, usado na aba Principal): Consolidado/Ontem/Hoje
+  // são recortes de período/dia específicos, e a partir de 07/08/2026 não vai
+  // ter mais nenhuma ficha com preço nesses recortes — nesse caso mostra "--"
+  // em vez de forçar um número fixo que não tem relação com aquele período.
   function cplInfo(m){
-    const ratio=META_CPL/CPL_FIXO;
+    if(!m.trafComPreco) return {txt:"--", emoji:"🔴"};
+    const ratio=META_CPL/m.cpl;
     let emoji="🔴";
     if(ratio>=1)emoji="🟢";else if(ratio>=0.85)emoji="🟡";
-    return {txt:fBRL(CPL_FIXO),emoji};
+    return {txt:fBRL(m.cpl),emoji};
   }
   // Farol do Custo/ficha total (com+sem preço) — meta própria (META_CPL_TOTAL),
   // continua recalculando normal (não é fixo como o "com preço").
