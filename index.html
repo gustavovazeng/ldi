@@ -1881,12 +1881,19 @@ function renderResumo(){
       cplTotal:tot.traf>0?adjSpend/tot.traf:0};
   }
 
-  // Farol do Custo/ficha com preço — meta META_CPL. Aqui no Resumo diário NÃO
-  // usa o valor fixo (CPL_FIXO, usado na aba Principal): Consolidado/Ontem/Hoje
-  // são recortes de período/dia específicos, e a partir de 07/08/2026 não vai
-  // ter mais nenhuma ficha com preço nesses recortes — nesse caso mostra "--"
-  // em vez de forçar um número fixo que não tem relação com aquele período.
-  function cplInfo(m){
+  // Farol do Custo/ficha com preço — meta META_CPL.
+  // • Total - Consolidado: usa o valor fixo (CPL_FIXO) — período histórico
+  //   amplo, mistura dias com e sem a pergunta de forma de pagamento.
+  // • Ontem/Hoje: NÃO usa o fixo — são recortes de um dia só, e a partir de
+  //   07/08/2026 não vai ter mais nenhuma ficha com preço nesses dias. Mostra
+  //   "--" em vez de um número fixo sem relação com aquele dia específico.
+  function cplInfo(m,useFixed){
+    if(useFixed){
+      const ratio=META_CPL/CPL_FIXO;
+      let emoji="🔴";
+      if(ratio>=1)emoji="🟢";else if(ratio>=0.85)emoji="🟡";
+      return {txt:fBRL(CPL_FIXO),emoji};
+    }
     if(!m.trafComPreco) return {txt:"--", emoji:"🔴"};
     const ratio=META_CPL/m.cpl;
     let emoji="🔴";
@@ -1939,8 +1946,8 @@ function renderResumo(){
       </span>
     </div>`;
   }
-  function block(title,m,isHoje,dateLbl){
-    const c=cplInfo(m);
+  function block(title,m,isHoje,dateLbl,useFixedCpl){
+    const c=cplInfo(m,useFixedCpl);
     const ct_=cplTotalInfo(m);
     return `
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">
@@ -1962,9 +1969,9 @@ function renderResumo(){
     </div>`;
   }
 
-  const ct=cplInfo(tot);
-  const co=cplInfo(ontem);
-  const ch_=cplInfo(hoje);
+  const ct=cplInfo(tot,true);
+  const co=cplInfo(ontem,false);
+  const ch_=cplInfo(hoje,false);
   const ctTotal=cplTotalInfo(tot);
   const coTotal=cplTotalInfo(ontem);
   const chTotal=cplTotalInfo(hoje);
@@ -2005,9 +2012,9 @@ ${textBlock("Hoje",hoje,fDateBR(today),ch_,chTotal)}`;
     ${S.error?`<div class="err">⚠️ ${S.error}</div>`:""}
     <div style="display:grid;grid-template-columns:1fr 420px;gap:20px;align-items:start">
       <div>
-        ${block("📶 Total - Consolidado",tot,false,per.s&&per.e?`${fDateBR(per.s)} → ${fDateBR(per.e)}`:"")}
-        ${block("⬅️ Ontem",ontem,false,fDateBR(yest))}
-        ${block("⬇️ Hoje",hoje,true,fDateBR(today))}
+        ${block("📶 Total - Consolidado",tot,false,per.s&&per.e?`${fDateBR(per.s)} → ${fDateBR(per.e)}`:"",true)}
+        ${block("⬅️ Ontem",ontem,false,fDateBR(yest),false)}
+        ${block("⬇️ Hoje",hoje,true,fDateBR(today),false)}
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;position:sticky;top:70px">
         <pre id="resumo-preview" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);white-space:pre-wrap;line-height:1.8;margin:0;user-select:all">${resumoText.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre>
